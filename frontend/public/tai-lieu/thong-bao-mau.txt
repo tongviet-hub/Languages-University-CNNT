@@ -1,0 +1,6 @@
+THONG BAO MAU - THPT Anh Duong
+
+Day la tai lieu mau de kiem thu chuc nang tai tai lieu (KT1) cua de tai 05.
+Neu cau tai duoc file nay bang ten mien truong.test thi web server dang phuc vu dung thu muc noi dung.
+
+Duong dan: http://truong.test/tai-lieu/thong-bao-mau.txt

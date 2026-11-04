@@ -1,0 +1,44 @@
+# ---- Dependencies & build output ----
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.tsbuildinfo
+.vite/
+
+# ---- Environment & secrets (đừng bao giờ commit) ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.pfx
+
+# ---- Logs ----
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# ---- Bản sao lưu / dữ liệu triển khai cục bộ (đề tài 05) ----
+backup/
+backup-*/
+*.bak
+*.zip
+
+# ---- Editor / IDE ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.sw?
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Claude Code (cấu hình máy cá nhân) ----
+.claude/settings.local.json

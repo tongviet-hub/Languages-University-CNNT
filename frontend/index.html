@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đại học Ngoại ngữ Ánh Dương</title>
+    <script>
+      // Áp dụng giao diện và ngôn ngữ đã lưu trước khi React chạy để tránh nháy màu / sai ngôn ngữ.
+      try {
+        var theme = localStorage.getItem("school-portal:theme");
+        if (theme === "dark" || (theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches)) {
+          document.documentElement.classList.add("dark");
+          document.documentElement.style.colorScheme = "dark";
+        }
+        var lang = localStorage.getItem("school-portal:lang");
+        if (lang === "vi" || lang === "en") document.documentElement.lang = lang;
+      } catch (e) {}
+    </script>
+    <meta name="description" content="Đại học Ngoại ngữ Ánh Dương – đào tạo Anh, Nhật, Hàn, Trung, Pháp, Đức. Tuyển sinh 2027 và cổng thông tin sinh viên." />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
