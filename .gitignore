@@ -43,4 +43,6 @@ desktop.ini
 # ---- Claude Code (cấu hình máy cá nhân) ----
 .claude/settings.local.json
 
-.HUONG_DAN_SV2.md
+
+# ---- Tài liệu hướng dẫn cục bộ ----
+HUONG_DAN_SV2*.md

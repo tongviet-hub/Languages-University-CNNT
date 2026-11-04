@@ -1,0 +1,22 @@
+# Chạy: docker compose up -d   (cần bật Docker Desktop)
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: school-portal-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-school}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-school_dev_password}
+      POSTGRES_DB: ${DB_NAME:-school_portal}
+    ports:
+      - "${DB_PORT:-5440}:5432"
+    volumes:
+      - school_portal_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-school} -d ${DB_NAME:-school_portal}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  school_portal_pgdata:
