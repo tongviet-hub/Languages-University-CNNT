@@ -20,7 +20,7 @@ Website cổng thông tin cho trường học (thời khóa biểu, điểm, đi
 |---|---|
 | **Frontend** (`frontend/`) | Chạy được đầy đủ giao diện. **Dữ liệu và đăng nhập đang là dữ liệu mẫu** (mock): vai trò lưu trong `localStorage`, chưa gọi API thật. |
 | **Backend** (`backend/`) | API đăng nhập, làm mới token, phân quyền admin/teacher/student, quản lý người dùng; có test e2e. **Chưa được frontend sử dụng.** |
-| **Tài liệu triển khai** (`docs/`) | Hướng dẫn cài web server, cấu hình hệ điều hành, hardening (Windows, Ubuntu, nâng cao). |
+| **Tài liệu triển khai** (`../docs/`, ngoài repo) | Hướng dẫn cài web server, cấu hình hệ điều hành, hardening (Windows, Ubuntu, nâng cao). Không nằm trong repo này. |
 
 > Nối frontend với backend (thay `frontend/src/api` và `frontend/src/lib/auth.tsx` bằng lời gọi `/api/...`) là bước tiếp theo, chưa làm.
 
@@ -59,8 +59,9 @@ Website cổng thông tin cho trường học (thời khóa biểu, điểm, đi
 ├── backend/           # API NestJS + PostgreSQL (xem backend/README.md)
 │   ├── src/{auth,users,common,config,database,health}
 │   └── test/auth.e2e.test.ts
-└── docs/              # Hướng dẫn triển khai & vận hành (Đề tài 05)
+└── README.md
 ```
+Hướng dẫn triển khai & vận hành (Đề tài 05) nằm ở thư mục `docs/` **cạnh** thư mục dự án (`KEY_PROJECT/docs/`), không thuộc repo này.
 
 ## Chạy trên máy cá nhân
 
@@ -112,13 +113,13 @@ Tiền tố `/api`; mặc định mọi route cần `Authorization: Bearer <acce
 
 ## Triển khai & vận hành (Đề tài 05)
 
-Toàn bộ hướng dẫn nằm trong [`docs/`](docs/). Chúng viết cho vai trò **SV2 – "Cài web, cấu hình hệ điều hành"**, nhưng cả nhóm đọc để hiểu hệ thống chạy thế nào.
+Hướng dẫn nằm ở thư mục `KEY_PROJECT/docs/` (cạnh thư mục dự án, **không nằm trong repo này**). Chúng viết cho vai trò **SV2 – "Cài web, cấu hình hệ điều hành"**, nhưng cả nhóm đọc để hiểu hệ thống chạy thế nào.
 
-| Tài liệu | Dành cho | Nội dung |
+| Tài liệu (trong `KEY_PROJECT/docs/`) | Dành cho | Nội dung |
 |---|---|---|
-| [docs/HUONG_DAN_SV2.md](docs/HUONG_DAN_SV2.md) | **Windows 11** | Phân tích đề bằng lời dễ hiểu; build web; cài Nginx; tên miền nội bộ `truong.test`; chạy dịch vụ dưới tài khoản ít quyền; chuẩn bị KT1–KT3 và câu hỏi bảo vệ |
-| [docs/HUONG_DAN_SV2_UBUNTU.md](docs/HUONG_DAN_SV2_UBUNTU.md) | **Ubuntu** | Như trên nhưng trên Linux; có cài đặt ban đầu cho máy mới, **mục G: chạy thêm Backend + PostgreSQL**, và **phụ lục H: toàn bộ lệnh theo thứ tự (copy-paste)** |
-| [docs/HUONG_DAN_SV2_ADVANCE.md](docs/HUONG_DAN_SV2_ADVANCE.md) | **Ubuntu (nâng cao)** | Triển khai không gián đoạn + rollback; chạy Nginx không root; sandbox systemd và cgroup; AppArmor; tinh chỉnh hệ điều hành; tự chấm điểm bằng script; Cấp 8 vận hành backend + PostgreSQL an toàn |
+| `HUONG_DAN_SV2.md` | **Windows 11** | Phân tích đề bằng lời dễ hiểu; build web; cài Nginx; tên miền nội bộ `truong.test`; chạy dịch vụ dưới tài khoản ít quyền; chuẩn bị KT1–KT3 và câu hỏi bảo vệ |
+| `HUONG_DAN_SV2_UBUNTU.md` | **Ubuntu** | Như trên nhưng trên Linux; có cài đặt ban đầu cho máy mới, **mục G: chạy thêm Backend + PostgreSQL**, và **phụ lục H: toàn bộ lệnh theo thứ tự (copy-paste)** |
+| `HUONG_DAN_SV2_ADVANCE.md` | **Ubuntu (nâng cao)** | Triển khai không gián đoạn + rollback; chạy Nginx không root; sandbox systemd và cgroup; AppArmor; tinh chỉnh hệ điều hành; tự chấm điểm bằng script; Cấp 8 vận hành backend + PostgreSQL an toàn |
 
 **Kiến trúc đích khi triển khai** (hướng có backend):
 ```
