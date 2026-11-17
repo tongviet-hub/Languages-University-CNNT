@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 const LandingPage = lazy(() => import("@/pages/landing"))
 const LoginPage = lazy(() => import("@/pages/login"))
+const RegisterPage = lazy(() => import("@/pages/register"))
 const DashboardPage = lazy(() => import("@/pages/dashboard"))
 const SchedulePage = lazy(() => import("@/pages/schedule"))
 const GradesPage = lazy(() => import("@/pages/grades"))
@@ -29,6 +30,7 @@ export default function App() {
       <Routes>
         <Route index element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route element={<AppLayout />}>
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="schedule" element={<SchedulePage />} />

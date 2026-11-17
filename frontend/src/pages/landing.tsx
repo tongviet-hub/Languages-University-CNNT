@@ -74,9 +74,14 @@ export default function LandingPage() {
       {c.ui.enterPortal}
     </Button>
   ) : (
-    <Button nativeButton={false} render={<Link to="/login" />}>
-      {c.ui.login}
-    </Button>
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" nativeButton={false} render={<Link to="/register" />}>
+        {t("register.link")}
+      </Button>
+      <Button nativeButton={false} render={<Link to="/login" />}>
+        {c.ui.login}
+      </Button>
+    </div>
   )
 
   return (

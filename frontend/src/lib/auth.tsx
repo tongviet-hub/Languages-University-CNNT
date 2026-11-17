@@ -8,6 +8,8 @@ const STORAGE_KEY = "school-portal:user"
 interface AuthContextValue {
   user: User | null
   login: (email: string, password: string) => Promise<User>
+  /** Sinh viên tự đăng ký; thành công là đăng nhập luôn. */
+  register: (email: string, password: string, fullName: string) => Promise<User>
   logout: () => Promise<void>
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>
 }
@@ -81,6 +83,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [apply]
   )
 
+  const register = useCallback(
+    async (email: string, password: string, fullName: string) => {
+      const res = await authApi.register(email, password, fullName)
+      setTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken })
+      return apply(res.user)
+    },
+    [apply]
+  )
+
   const logout = useCallback(async () => {
     try {
       await authApi.logout() // thu hồi refresh token trên server
@@ -94,7 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authApi.changePassword(currentPassword, newPassword)
   }, [])
 
-  const value = useMemo(() => ({ user, login, logout, changePassword }), [user, login, logout, changePassword])
+  const value = useMemo(
+    () => ({ user, login, register, logout, changePassword }),
+    [user, login, register, logout, changePassword]
+  )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

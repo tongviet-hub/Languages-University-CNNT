@@ -154,6 +154,8 @@ export async function apiRequest<T>(path: string, { method = "GET", body, auth =
 export const authApi = {
   login: (email: string, password: string) =>
     apiRequest<AuthResponse>("/auth/login", { method: "POST", body: { email, password }, auth: false }),
+  register: (email: string, password: string, fullName: string) =>
+    apiRequest<AuthResponse>("/auth/register", { method: "POST", body: { email, password, fullName }, auth: false }),
   me: () => apiRequest<ApiUser>("/me"),
   logout: () => apiRequest<void>("/auth/logout", { method: "POST" }),
   changePassword: (currentPassword: string, newPassword: string) =>
