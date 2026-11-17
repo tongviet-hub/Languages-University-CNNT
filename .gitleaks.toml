@@ -1,0 +1,10 @@
+# Cấu hình Gitleaks (ci/scan-secrets.sh): dùng bộ luật mặc định, chỉ bỏ qua file mẫu không chứa secret thật.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "File mẫu chỉ chứa giá trị giả (change-me...) và lockfile (chuỗi integrity hash)"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)package-lock\.json$''',
+]

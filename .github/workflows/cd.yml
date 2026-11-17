@@ -1,27 +1,51 @@
-name: CD - Build image & cập nhật Infra
+name: CD
 
-# Mỗi lần push lên main:
-#   1. build-and-push: build 4 image (song song) và đẩy lên GHCR, tag = sha-<7 ký tự commit>
+# Chỉ chạy SAU KHI workflow "CI" xanh trên main (push), nên code chưa qua test không bao giờ lên production.
+#   1. build-and-push: build 4 image (song song) -> Trivy quét (CRITICAL thì dừng) -> đẩy lên GHCR
+#                      kèm SBOM + provenance -> ký image bằng cosign (keyless, qua OIDC của GitHub)
 #   2. update-infra:   ghi tag mới vào repo Infra (apps/portal/kustomization.yaml)
-#   -> ArgoCD trong cluster thấy commit đó và tự cập nhật. CI KHÔNG đụng trực tiếp vào cluster.
+#                      -> ArgoCD trong cluster thấy commit đó và tự cập nhật. CI KHÔNG đụng trực tiếp vào cluster.
+#   3. smoke-test:     chờ https://lumina.synnie.dev trả lời bình thường sau khi ArgoCD đồng bộ
+#
+# Chạy tay (tab Actions -> CD -> Run workflow) để deploy lại commit mới nhất của main mà không chờ CI,
+# chỉ dùng khi khẩn cấp (vd cần dựng lại image).
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
-  workflow_dispatch: # cho phép bấm chạy tay trong tab Actions
+  workflow_dispatch:
 
 permissions:
   contents: read
-  packages: write # để đẩy image lên ghcr.io
 
+# Hai lần deploy không bao giờ chạy chồng lên nhau; lần sau xếp hàng chờ lần trước xong
 concurrency:
-  group: cd-${{ github.ref }}
+  group: cd-production
   cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  # Commit được deploy: commit mà CI vừa kiểm tra (workflow_run), hoặc commit hiện tại nếu chạy tay
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
 jobs:
   build-and-push:
     name: Build ${{ matrix.image }}
+    # CI phải xanh, phải là push lên main (không phải PR), chạy tay thì chỉ cho phép trên main
+    if: >-
+      (github.event_name == 'workflow_run'
+        && github.event.workflow_run.conclusion == 'success'
+        && github.event.workflow_run.event == 'push')
+      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # đẩy image lên ghcr.io
+      id-token: write # cosign keyless cần token OIDC
     strategy:
+      fail-fast: true # 1 image hỏng -> dừng hết, không deploy nửa vời
       # Mỗi dòng = một image. "context" là thư mục chứa Dockerfile.
       matrix:
         include:
@@ -34,50 +58,108 @@ jobs:
           - image: portal-finance
             context: services/finance-api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Đăng nhập GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }} # GitHub tự cấp, không cần tạo
 
-      - name: Build & push
-        uses: docker/build-push-action@v6
+      # Tag duy nhất = sha-<commit đầy đủ>: bất biến, nhìn tag là biết image build từ commit nào.
+      # Không dùng "latest" vì tag này trôi, không biết cluster đang chạy bản nào và không rollback được.
+      # Labels OCI: ghi nguồn gốc (repo, commit, thời điểm build) vào chính image.
+      - name: Metadata (tag + OCI labels)
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ matrix.image }}
+          tags: type=raw,value=sha-${{ env.SHA }}
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image }}
+            org.opencontainers.image.revision=${{ env.SHA }}
+
+      # Bước 1: build vào máy chạy (chưa push) để quét trước. Cache dùng chung với job docker-build của CI.
+      - name: Build (chưa push)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.context }}
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+
+      - name: Trivy quét image (CRITICAL thì dừng, không push)
+        run: bash ci/scan-image.sh "${{ steps.meta.outputs.tags }}"
+
+      # Bước 2: push. Layer đã có trong cache nên gần như không build lại.
+      # SBOM = danh sách mọi thư viện trong image; provenance = chứng nhận image build từ commit nào, ở đâu.
+      - name: Push kèm SBOM + provenance
+        id: push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ${{ matrix.context }}
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:sha-${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest
-          # Cache riêng cho từng image: lần sau chỉ build lại phần có thay đổi
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          sbom: true
+          provenance: mode=max
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      # Ký theo DIGEST (mã băm nội dung), không theo tag: tag có thể bị ghi đè, digest thì không.
+      # Keyless: không có private key nào phải giữ, chữ ký gắn với danh tính workflow này trên GitHub.
+      - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
+
+      - name: Ký image (cosign keyless)
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ matrix.image }}@${{ steps.push.outputs.digest }}
+        run: cosign sign --yes "$IMAGE"
+
+      - name: Tóm tắt
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          {
+            echo "### ${{ matrix.image }}"
+            echo "| Tag | Digest |"
+            echo "|---|---|"
+            echo "| \`sha-${SHA:0:7}…\` | \`${DIGEST}\` |"
+            echo
+            echo "Kiểm tra chữ ký: \`cosign verify ${REGISTRY}/${{ matrix.image }}@${DIGEST} --certificate-identity-regexp 'https://github.com/${{ github.repository }}/' --certificate-oidc-issuer https://token.actions.githubusercontent.com\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   update-infra:
     name: Cập nhật tag trong Infra
     needs: [build-and-push]
     runs-on: ubuntu-latest
-    concurrency:
-      group: update-infra # không cho 2 lần chạy cùng ghi vào Infra một lúc
-      cancel-in-progress: false
+    timeout-minutes: 10
+    # Môi trường "production": GitHub lưu lịch sử mọi lần deploy; muốn bắt duyệt tay trước khi deploy
+    # thì vào Settings -> Environments -> production -> Required reviewers.
+    environment:
+      name: production
+      url: https://lumina.synnie.dev
     env:
       INFRA_REPO: git@github.com:Synnie-studio/Infra.git
       FILE: apps/portal/kustomization.yaml
-      REGISTRY: ghcr.io/${{ github.repository_owner }}
+    outputs:
+      infra_commit: ${{ steps.bump.outputs.infra_commit }}
     steps:
       - name: Nạp deploy key (quyền ghi vào Infra)
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.INFRA_DEPLOY_KEY }}
 
       - name: Sửa tag và push lên Infra
+        id: bump
         run: |
           set -euo pipefail
-          TAG="sha-${GITHUB_SHA}"
+          TAG="sha-${SHA}"
           git clone --depth 1 "$INFRA_REPO" infra
           cd infra
 
@@ -88,17 +170,64 @@ jobs:
 
           if git diff --quiet; then
             echo "Tag đã là ${TAG}, không có gì để đổi."
+            echo "infra_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "ci(portal): images -> ${TAG:0:11}" -m "Nguồn: ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
+          git commit -am "ci(portal): images -> ${TAG:0:11}" \
+            -m "Nguồn: ${GITHUB_REPOSITORY}@${SHA}" \
+            -m "Workflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
           # Có commit khác chen vào (vd CI của Vocab) thì kéo về rồi thử lại
           for i in 1 2 3 4 5; do
-            git push && exit 0
+            if git push; then
+              echo "infra_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep $((i * 2))
             git pull --rebase
           done
           echo "Không push được sau 5 lần thử" >&2
+          exit 1
+
+      - name: Tóm tắt
+        env:
+          INFRA_COMMIT: ${{ steps.bump.outputs.infra_commit }}
+        run: |
+          {
+            echo "### Đã cập nhật Infra"
+            echo "- Commit app: \`${SHA}\`"
+            echo "- Commit Infra: \`${INFRA_COMMIT}\` (Synnie-studio/Infra)"
+            echo "- ArgoCD (app \`portal\`) sẽ tự đồng bộ trong vài phút: https://argocd.synnie.dev"
+            echo
+            echo "Rollback: \`git revert ${INFRA_COMMIT:0:7}\` trong repo Infra rồi push."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  smoke-test:
+    name: Smoke test production
+    needs: [update-infra]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Không làm đỏ cả CD: ArgoCD đồng bộ bất đồng bộ và cluster chạy ở máy nhà, có thể đang tắt.
+    # Fail ở đây là tín hiệu để vào ArgoCD/Grafana xem, không phải để chặn gì thêm.
+    continue-on-error: true
+    steps:
+      - name: Chờ website và API trả lời bình thường
+        run: |
+          set -uo pipefail
+          URL=https://lumina.synnie.dev
+          # ArgoCD mặc định kiểm tra Git mỗi ~3 phút, cộng thời gian rollout -> chờ tối đa 10 phút
+          for i in $(seq 1 40); do
+            web=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$URL/" || true)
+            api=$(curl -s --max-time 10 "$URL/api/v1/health" || true)
+            echo "Lần $i: web=$web api=$api"
+            if [[ "$web" == 200 ]] && echo "$api" | grep -q '"status":"ok"'; then
+              echo "### Smoke test: OK ✅ ($URL)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "### Smoke test: FAIL ❌ — xem ArgoCD (app portal) và Grafana" >> "$GITHUB_STEP_SUMMARY"
           exit 1
