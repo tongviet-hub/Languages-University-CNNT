@@ -1,0 +1,27 @@
+{
+  "name": "finance-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "School Portal - Finance API (khung tối thiểu; học phí & thanh toán làm ở giai đoạn sau)",
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.3.3",
+    "@nestjs/core": "^12.3.3",
+    "@nestjs/platform-express": "^12.3.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.11",
+    "@nestjs/schematics": "^12.0.12",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "typescript": "^6.0.3"
+  }
+}

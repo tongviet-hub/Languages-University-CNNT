@@ -6,9 +6,9 @@ import { UsersService } from '../users/users.service.js';
 
 /** Tài khoản demo (khớp với giao diện frontend). Chạy lại nhiều lần vẫn an toàn - bỏ qua tài khoản đã có. */
 const DEMO_USERS = [
-  { email: 'admin@adu.edu.vn', fullName: 'Quản trị viên', role: Role.ADMIN },
-  { email: 'teacher@adu.edu.vn', fullName: 'Trần Thị Lan', role: Role.TEACHER },
-  { email: 'minhanh@sv.adu.edu.vn', fullName: 'Nguyễn Minh Anh', role: Role.STUDENT },
+  { email: 'admin@lumina.edu.vn', fullName: 'Quản trị viên', role: Role.ADMIN },
+  { email: 'teacher@lumina.edu.vn', fullName: 'Trần Thị Lan', role: Role.TEACHER },
+  { email: 'minhanh@sv.lumina.edu.vn', fullName: 'Nguyễn Minh Anh', role: Role.STUDENT },
 ];
 
 async function main() {

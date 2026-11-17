@@ -5,7 +5,7 @@ import { Role } from '../../common/enums/role.enum.js';
 import { PasswordField } from './password.js';
 
 export class CreateUserDto {
-  @ApiProperty({ example: 'gv.moi@adu.edu.vn' })
+  @ApiProperty({ example: 'gv.moi@lumina.edu.vn' })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   @IsEmail()
   @MaxLength(255)

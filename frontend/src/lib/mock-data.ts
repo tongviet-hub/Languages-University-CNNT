@@ -69,7 +69,7 @@ export const demoUsers: Record<Role, User> = {
   student: {
     id: "u-001",
     name: "Nguyễn Minh Anh",
-    email: "minhanh@sv.adu.edu.vn",
+    email: "minhanh@sv.lumina.edu.vn",
     role: "student",
     className: { vi: "Ngôn ngữ Anh – K24A2", en: "English Studies – K24A2" },
     studentCode: "SV2024-0152",
@@ -80,7 +80,7 @@ export const demoUsers: Record<Role, User> = {
   teacher: {
     id: "u-002",
     name: "Trần Hoài Nam",
-    email: "hoainam@adu.edu.vn",
+    email: "hoainam@lumina.edu.vn",
     role: "teacher",
     className: { vi: "Cố vấn học tập K24A2", en: "Academic Advisor, K24A2" },
     studentCode: "GV-0031",

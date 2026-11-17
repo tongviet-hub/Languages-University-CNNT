@@ -1,0 +1,104 @@
+name: CD - Build image & cập nhật Infra
+
+# Mỗi lần push lên main:
+#   1. build-and-push: build 4 image (song song) và đẩy lên GHCR, tag = sha-<7 ký tự commit>
+#   2. update-infra:   ghi tag mới vào repo Infra (apps/portal/kustomization.yaml)
+#   -> ArgoCD trong cluster thấy commit đó và tự cập nhật. CI KHÔNG đụng trực tiếp vào cluster.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # cho phép bấm chạy tay trong tab Actions
+
+permissions:
+  contents: read
+  packages: write # để đẩy image lên ghcr.io
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    strategy:
+      # Mỗi dòng = một image. "context" là thư mục chứa Dockerfile.
+      matrix:
+        include:
+          - image: portal-frontend
+            context: frontend
+          - image: portal-portal
+            context: services/portal
+          - image: portal-academic
+            context: services/academic-api
+          - image: portal-finance
+            context: services/finance-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Đăng nhập GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }} # GitHub tự cấp, không cần tạo
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest
+          # Cache riêng cho từng image: lần sau chỉ build lại phần có thay đổi
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  update-infra:
+    name: Cập nhật tag trong Infra
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: update-infra # không cho 2 lần chạy cùng ghi vào Infra một lúc
+      cancel-in-progress: false
+    env:
+      INFRA_REPO: git@github.com:Synnie-studio/Infra.git
+      FILE: apps/portal/kustomization.yaml
+      REGISTRY: ghcr.io/${{ github.repository_owner }}
+    steps:
+      - name: Nạp deploy key (quyền ghi vào Infra)
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.INFRA_DEPLOY_KEY }}
+
+      - name: Sửa tag và push lên Infra
+        run: |
+          set -euo pipefail
+          TAG="sha-${GITHUB_SHA}"
+          git clone --depth 1 "$INFRA_REPO" infra
+          cd infra
+
+          # yq có sẵn trên máy chạy của GitHub. Với mỗi image: đặt tên đầy đủ trên GHCR + tag mới.
+          for IMG in portal-frontend portal-portal portal-academic portal-finance; do
+            yq -i "(.images[] | select(.name == \"$IMG\")) |= (.newName = \"$REGISTRY/$IMG\" | .newTag = \"$TAG\")" "$FILE"
+          done
+
+          if git diff --quiet; then
+            echo "Tag đã là ${TAG}, không có gì để đổi."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "ci(portal): images -> ${TAG:0:11}" -m "Nguồn: ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
+
+          # Có commit khác chen vào (vd CI của Vocab) thì kéo về rồi thử lại
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            git pull --rebase
+          done
+          echo "Không push được sau 5 lần thử" >&2
+          exit 1

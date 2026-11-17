@@ -19,14 +19,10 @@ Website cổng thông tin cho trường học (thời khóa biểu, điểm, đi
 | Phần | Tình trạng |
 |---|---|
 | **Frontend** (`frontend/`) | Chạy được đầy đủ giao diện. **Dữ liệu và đăng nhập đang là dữ liệu mẫu** (mock): vai trò lưu trong `localStorage`, chưa gọi API thật. |
-| **Backend** (`backend/`) | API đăng nhập, làm mới token, phân quyền admin/teacher/student, quản lý người dùng; có test e2e. **Chưa được frontend sử dụng.** |
-<<<<<<< HEAD
+| **Backend** (`services/`) | Chia **3 microservice** theo đề THHT Chủ đề 04: **Portal** (điểm vào duy nhất, điều phối), **Academic API** (đăng nhập, phân quyền, quản lý người dùng; sau này thêm sinh viên), **Finance API** (mới có khung `/health`). Có test e2e cho Portal và Academic. **Chưa được frontend sử dụng.** |
 | **Tài liệu triển khai** (`../docs/`, ngoài repo) | Hướng dẫn cài web server, cấu hình hệ điều hành, hardening (Windows, Ubuntu, nâng cao). Không nằm trong repo này. |
-=======
-| **Tài liệu triển khai** (`docs/`) | Hướng dẫn cài web server, cấu hình hệ điều hành, hardening (Windows, Ubuntu, nâng cao). |
->>>>>>> 27f0038f0f2af2cd1e1344697e8c8c5e7d8d6deb
 
-> Nối frontend với backend (thay `frontend/src/api` và `frontend/src/lib/auth.tsx` bằng lời gọi `/api/...`) là bước tiếp theo, chưa làm.
+> Nối frontend với backend (thay `frontend/src/api` và `frontend/src/lib/auth.tsx` bằng lời gọi `/api/v1/portal/...`) là bước tiếp theo, chưa làm.
 
 ## Tính năng
 
@@ -60,17 +56,17 @@ Website cổng thông tin cho trường học (thời khóa biểu, điểm, đi
 │       ├── components/    # layout, ui, landing, common
 │       ├── api/           # hàm lấy dữ liệu (hiện là dữ liệu mẫu)
 │       └── lib/           # auth, dữ liệu mẫu, từ điển đa ngôn ngữ
-├── backend/           # API NestJS + PostgreSQL (xem backend/README.md)
-│   ├── src/{auth,users,common,config,database,health}
-│   └── test/auth.e2e.test.ts
-<<<<<<< HEAD
+├── services/          # Backend chia microservice (NestJS)
+│   ├── portal/        # Điểm vào duy nhất, không có DB: chuyển tiếp đăng nhập, xác thực token, gọi API con (timeout 2s)
+│   ├── academic-api/  # Đăng nhập, phân quyền, người dùng (PostgreSQL riêng) - xem services/academic-api/README.md
+│   └── finance-api/   # Khung tối thiểu (/health); học phí & thanh toán làm ở giai đoạn sau
+├── docker-compose.yml         # chạy cả 3 dịch vụ + PostgreSQL (demo: mở cả 3 cổng)
+├── docker-compose.deploy.yml  # ghi đè khi triển khai: chỉ Portal công khai
+├── .env.example               # mẫu biến môi trường cho compose
+├── THHT requirements/         # Đề bài THHT
 └── README.md
 ```
 Hướng dẫn triển khai & vận hành (Đề tài 05) nằm ở thư mục `docs/` **cạnh** thư mục dự án (`KEY_PROJECT/docs/`), không thuộc repo này.
-=======
-└── docs/              # Hướng dẫn triển khai & vận hành (Đề tài 05)
-```
->>>>>>> 27f0038f0f2af2cd1e1344697e8c8c5e7d8d6deb
 
 ## Chạy trên máy cá nhân
 
@@ -85,31 +81,59 @@ npm run build      # build ra frontend/dist
 npm run lint       # oxlint
 ```
 
-### Backend
+### Backend (3 microservice)
+
+**Cách 1 – Docker Compose (cả 3 dịch vụ + PostgreSQL):**
 ```bash
-cd backend
+cp .env.example .env                 # điền DB_PASSWORD, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET (≥ 32 ký tự, ngẫu nhiên)
+docker compose up -d --build         # Portal :8080, Academic :8081, Finance :8082 (đổi cổng Portal bằng PORTAL_PORT)
+docker compose exec academic-api node dist/database/seed.js    # tạo 3 tài khoản demo
+# Triển khai (chỉ Portal công khai):
+docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --build
+```
+
+**Cách 2 – chạy từng dịch vụ để phát triển** (mỗi dịch vụ một terminal):
+```bash
+cd services/academic-api
 cp .env.example .env                 # rồi đổi JWT_ACCESS_SECRET / JWT_REFRESH_SECRET (≥ 32 ký tự)
 docker compose up -d                 # bật PostgreSQL (cổng 5440), hoặc dùng PostgreSQL có sẵn và sửa .env
-npm install
-npm run seed                         # tạo 3 tài khoản demo
-npm run start:dev                    # API: http://localhost:3000/api   |   Swagger: http://localhost:3000/docs
+npm install && npm run seed
+PORT=8081 npm run start:dev          # http://localhost:8081/api/v1   |   Swagger: /docs
 npm test                             # test e2e trên DB riêng school_portal_test
-```
-Chi tiết thiết kế xác thực và danh sách endpoint: [backend/README.md](backend/README.md).
 
-> Lưu ý kỹ thuật: backend là **ESM** (import tương đối phải có đuôi `.js`) và **TypeScript phải giữ ở bản ^6** (bản 7 chưa có compiler API nên Nest CLI không build được).
+cd ../portal
+cp .env.example .env                 # ACADEMIC_URL=http://localhost:8081
+npm install && npm run start:dev     # http://localhost:8080/api/v1   |   Swagger: /docs
+npm test                             # test e2e với Academic giả, không cần DB
+
+cd ../finance-api && npm install && PORT=8082 npm run start:dev    # khung /health
+```
+Chi tiết thiết kế xác thực và danh sách endpoint của Academic: [services/academic-api/README.md](services/academic-api/README.md).
+
+> Lưu ý kỹ thuật: các dịch vụ là **ESM** (import tương đối phải có đuôi `.js`) và **TypeScript phải giữ ở bản ^6** (bản 7 chưa có compiler API nên Nest CLI không build được).
 
 **Tài khoản demo** (do `npm run seed` tạo, mật khẩu mặc định chỉ dùng khi phát triển):
 
 | Vai trò | Email |
 |---|---|
-| admin | `admin@adu.edu.vn` |
-| teacher | `teacher@adu.edu.vn` |
-| student | `minhanh@sv.adu.edu.vn` |
+| admin | `admin@lumina.edu.vn` |
+| teacher | `teacher@lumina.edu.vn` |
+| student | `minhanh@sv.lumina.edu.vn` |
 
 ## Backend API
 
-Tiền tố `/api`; mặc định mọi route cần `Authorization: Bearer <accessToken>`, trừ route công khai.
+Tiền tố `/api/v1`. **Client chỉ nói chuyện với Portal**; Portal chuyển tiếp đăng nhập tới Academic, trả lỗi theo một định dạng chuẩn `{"error":{"code","message","requestId"}}`. Mỗi request mang một `X-Request-ID`: Portal sinh (hoặc giữ ID client gửi), truyền xuống Academic, và cả hai ghi ID đó vào mỗi dòng log truy cập, nên `grep <requestId>` thấy được đường đi qua hai dịch vụ (Finance chưa có, sẽ thêm cùng nghiệp vụ học phí). Gọi dịch vụ con có timeout 2 giây (không kết nối được → 503, quá hạn → 504, dịch vụ con trả 5xx/dữ liệu hỏng → 502).
+
+**Portal** (công khai ra ngoài)
+
+| Method | Đường dẫn | Ai gọi được |
+|---|---|---|
+| GET | `/health` | công khai |
+| POST | `/portal/auth/register`, `/portal/auth/login`, `/portal/auth/refresh` | công khai |
+| POST | `/portal/auth/logout`, `/portal/auth/change-password` | đã đăng nhập |
+| GET | `/portal/me` | đã đăng nhập (Portal hỏi Academic `/auth/me` để xác thực) |
+
+**Academic API** (nội bộ; mở cổng 8081 chỉ khi demo/Postman)
 
 | Method | Đường dẫn | Ai gọi được |
 |---|---|---|
@@ -120,9 +144,10 @@ Tiền tố `/api`; mặc định mọi route cần `Authorization: Bearer <acce
 | GET | `/users` | admin (tất cả), teacher (chỉ student) |
 | POST, GET/PATCH/DELETE | `/users`, `/users/:id` | admin |
 
+**Finance API**: mới có `GET /health`.
+
 ## Triển khai & vận hành (Đề tài 05)
 
-<<<<<<< HEAD
 Hướng dẫn nằm ở thư mục `KEY_PROJECT/docs/` (cạnh thư mục dự án, **không nằm trong repo này**). Chúng viết cho vai trò **SV2 – "Cài web, cấu hình hệ điều hành"**, nhưng cả nhóm đọc để hiểu hệ thống chạy thế nào.
 
 | Tài liệu (trong `KEY_PROJECT/docs/`) | Dành cho | Nội dung |
@@ -130,23 +155,19 @@ Hướng dẫn nằm ở thư mục `KEY_PROJECT/docs/` (cạnh thư mục dự 
 | `HUONG_DAN_SV2.md` | **Windows 11** | Phân tích đề bằng lời dễ hiểu; build web; cài Nginx; tên miền nội bộ `truong.test`; chạy dịch vụ dưới tài khoản ít quyền; chuẩn bị KT1–KT3 và câu hỏi bảo vệ |
 | `HUONG_DAN_SV2_UBUNTU.md` | **Ubuntu** | Như trên nhưng trên Linux; có cài đặt ban đầu cho máy mới, **mục G: chạy thêm Backend + PostgreSQL**, và **phụ lục H: toàn bộ lệnh theo thứ tự (copy-paste)** |
 | `HUONG_DAN_SV2_ADVANCE.md` | **Ubuntu (nâng cao)** | Triển khai không gián đoạn + rollback; chạy Nginx không root; sandbox systemd và cgroup; AppArmor; tinh chỉnh hệ điều hành; tự chấm điểm bằng script; Cấp 8 vận hành backend + PostgreSQL an toàn |
-=======
-Toàn bộ hướng dẫn nằm trong [`docs/`](docs/). Chúng viết cho vai trò **SV2 – "Cài web, cấu hình hệ điều hành"**, nhưng cả nhóm đọc để hiểu hệ thống chạy thế nào.
-
-| Tài liệu | Dành cho | Nội dung |
-|---|---|---|
-| [docs/HUONG_DAN_SV2.md](docs/HUONG_DAN_SV2.md) | **Windows 11** | Phân tích đề bằng lời dễ hiểu; build web; cài Nginx; tên miền nội bộ `truong.test`; chạy dịch vụ dưới tài khoản ít quyền; chuẩn bị KT1–KT3 và câu hỏi bảo vệ |
-| [docs/HUONG_DAN_SV2_UBUNTU.md](docs/HUONG_DAN_SV2_UBUNTU.md) | **Ubuntu** | Như trên nhưng trên Linux; có cài đặt ban đầu cho máy mới, **mục G: chạy thêm Backend + PostgreSQL**, và **phụ lục H: toàn bộ lệnh theo thứ tự (copy-paste)** |
-| [docs/HUONG_DAN_SV2_ADVANCE.md](docs/HUONG_DAN_SV2_ADVANCE.md) | **Ubuntu (nâng cao)** | Triển khai không gián đoạn + rollback; chạy Nginx không root; sandbox systemd và cgroup; AppArmor; tinh chỉnh hệ điều hành; tự chấm điểm bằng script; Cấp 8 vận hành backend + PostgreSQL an toàn |
->>>>>>> 27f0038f0f2af2cd1e1344697e8c8c5e7d8d6deb
 
 **Kiến trúc đích khi triển khai** (hướng có backend):
 ```
-Trình duyệt ──80──► Nginx ──/──────► file tĩnh frontend/dist
+Trình duyệt ──80──► Nginx ──/────────────► file tĩnh frontend/dist
                       │
-                      └──/api/──► NestJS (127.0.0.1:3000) ──► PostgreSQL (127.0.0.1:5432)
+                      └──/api/v1/──► Portal (127.0.0.1:8080)
+                                       │   mạng nội bộ Docker 172.30.0.0/24
+                                       ├──► Academic API (:8081) ──► PostgreSQL
+                                       └──► Finance API  (:8082)
 ```
-Chỉ Nginx lộ ra ngoài; backend và database chỉ nói chuyện nội bộ và chạy bằng tài khoản hệ thống ít quyền.
+Chỉ Nginx lộ ra ngoài. Nginx chuyển `/api/v1/` tới **Portal** (không phải tới Academic): `proxy_pass http://127.0.0.1:8080;`. Academic, Finance và PostgreSQL chỉ nói chuyện trong mạng nội bộ (dùng `docker-compose.deploy.yml`). Khi có Nginx cùng máy, đặt `PORTAL_BIND=127.0.0.1` và `PORTAL_TRUST_PROXY=172.30.0.1` trong `.env` (giải thích trong `.env.example`).
+
+> Tài liệu SV2 ngoài repo vẫn mô tả bản cũ (một backend NestJS ở cổng 3000), cần cập nhật theo sơ đồ này.
 
 **Ba bài nghiệm thu của đề:** KT1 – truy cập `http://truong.test/` từ máy khác; KT2 – phân biệt hai loại lỗi (DNS sai và dừng dịch vụ) bằng bằng chứng khác nhau; KT3 – xóa nội dung rồi khôi phục từ bản sao lưu.
 

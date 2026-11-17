@@ -1,6 +1,6 @@
-# School Portal – Backend (NestJS + PostgreSQL)
+# School Portal – Academic API (NestJS + PostgreSQL)
 
-API xác thực & phân quyền cho School Portal. Stack: **NestJS 12**, **TypeORM**, **PostgreSQL**, JWT (access + refresh), `class-validator`, Swagger.
+Một trong 3 microservice của School Portal (cùng Portal và Finance API). Hiện phụ trách **xác thực & phân quyền**; sau này thêm hồ sơ sinh viên (`GET /students/:id`). Client không gọi trực tiếp dịch vụ này mà đi qua **Portal** (xem README gốc). Stack: **NestJS 12**, **TypeORM**, **PostgreSQL**, JWT (access + refresh), `class-validator`, Swagger.
 
 ## Chạy nhanh
 
@@ -10,12 +10,12 @@ cp .env.example .env        # rồi đổi JWT_*_SECRET (node -e "console.log(re
 
 # 1. Bật PostgreSQL (chọn 1 trong 2)
 docker compose up -d                                    # cách A: Docker (cổng 5440)
-pg_ctl -D C:\Users\ADMIN\pgdata-school-portal -o "-p 5440" start   # cách B: instance local đã init sẵn trên máy này
+# cách B: dùng PostgreSQL có sẵn trên máy, sửa DB_* trong .env
 
 # 2. Chạy
 npm install
 npm run seed                # tạo 3 tài khoản demo (an toàn khi chạy lại)
-npm run start:dev           # http://localhost:3000/api  |  Swagger: http://localhost:3000/docs
+npm run start:dev           # http://localhost:3000/api/v1  |  Swagger: http://localhost:3000/docs
 npm test                    # e2e trên DB riêng school_portal_test
 ```
 
@@ -23,13 +23,13 @@ Tài khoản demo (mật khẩu `Password123!`):
 
 | Vai trò | Email |
 |---|---|
-| admin | `admin@adu.edu.vn` |
-| teacher | `teacher@adu.edu.vn` |
-| student | `minhanh@sv.adu.edu.vn` |
+| admin | `admin@lumina.edu.vn` |
+| teacher | `teacher@lumina.edu.vn` |
+| student | `minhanh@sv.lumina.edu.vn` |
 
 ## Endpoint
 
-Tiền tố `/api`. Mặc định **mọi route đều cần Bearer token**, trừ route đánh dấu `@Public()`.
+Tiền tố `/api/v1`. Mặc định **mọi route đều cần Bearer token**, trừ route đánh dấu `@Public()`.
 
 | Method | Path | Ai gọi được |
 |---|---|---|
@@ -69,6 +69,11 @@ src/
 └─ database/seed.ts
 test/auth.e2e.test.ts
 ```
+
+## Chạy sau Portal
+
+- Academic tin header `X-Forwarded-For` từ dải IP riêng (`trust proxy`) để rate limit tính theo IP người dùng thật, không phải IP của Portal.
+- Khi triển khai, **không publish cổng** của dịch vụ này (xem `docker-compose.deploy.yml` ở thư mục gốc).
 
 ## Việc cần làm trước khi lên production
 

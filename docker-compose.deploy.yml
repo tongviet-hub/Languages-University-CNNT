@@ -1,0 +1,8 @@
+# Ghi đè khi triển khai: chỉ Portal công khai, Academic và Finance chỉ nằm trong mạng nội bộ của Compose.
+#   docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --build
+# Cần Docker Compose >= 2.24 (cú pháp !reset).
+services:
+  academic-api:
+    ports: !reset []
+  finance-api:
+    ports: !reset []

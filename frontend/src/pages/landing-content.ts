@@ -94,7 +94,7 @@ const vi: LandingContent = {
     titleBefore: "Mở cánh cửa thế giới bằng ",
     titleHighlight: "ngoại ngữ",
     titleAfter: ".",
-    text: "Đại học Ngoại ngữ Ánh Dương đào tạo nguồn nhân lực ngôn ngữ chất lượng cao: thành thạo ngoại ngữ, am hiểu văn hóa và sẵn sàng làm việc trong môi trường toàn cầu.",
+    text: "Đại học Ngoại ngữ Lumina đào tạo nguồn nhân lực ngôn ngữ chất lượng cao: thành thạo ngoại ngữ, am hiểu văn hóa và sẵn sàng làm việc trong môi trường toàn cầu.",
     primaryCta: "Đăng ký xét tuyển",
     secondaryCta: "Khám phá ngành học",
     imageAlt: "Nhóm sinh viên cười tươi ngồi cạnh nhau ngoài trời",
@@ -204,7 +204,7 @@ const vi: LandingContent = {
   ],
   news: {
     eyebrow: "Tin tức & sự kiện",
-    title: "Đời sống học thuật tại Ánh Dương",
+    title: "Đời sống học thuật tại Lumina",
     items: [
       {
         image: "/images/campus-sign.jpg",
@@ -245,7 +245,7 @@ const vi: LandingContent = {
     items: [
       { icon: "pin", label: "Địa chỉ", value: "123 Đường Ngôn Ngữ, Quận 1, TP. Hồ Chí Minh" },
       { icon: "phone", label: "Hotline tuyển sinh", value: "1900 1234" },
-      { icon: "mail", label: "Email", value: "tuyensinh@adu.edu.vn" },
+      { icon: "mail", label: "Email", value: "tuyensinh@lumina.edu.vn" },
     ],
   },
 }
@@ -273,7 +273,7 @@ const en: LandingContent = {
     titleBefore: "Open the doors to the world with ",
     titleHighlight: "languages",
     titleAfter: ".",
-    text: "Ánh Dương University of Foreign Languages trains high-quality language professionals: fluent in foreign languages, culturally aware and ready to work in a global environment.",
+    text: "Lumina University of Languages trains high-quality language professionals: fluent in foreign languages, culturally aware and ready to work in a global environment.",
     primaryCta: "Apply now",
     secondaryCta: "Explore programs",
     imageAlt: "A group of smiling students sitting together outdoors",
@@ -383,7 +383,7 @@ const en: LandingContent = {
   ],
   news: {
     eyebrow: "News & events",
-    title: "Academic life at Ánh Dương",
+    title: "Academic life at Lumina",
     items: [
       {
         image: "/images/campus-sign.jpg",
@@ -424,7 +424,7 @@ const en: LandingContent = {
     items: [
       { icon: "pin", label: "Address", value: "123 Ngôn Ngữ Street, District 1, Ho Chi Minh City" },
       { icon: "phone", label: "Admissions hotline", value: "1900 1234" },
-      { icon: "mail", label: "Email", value: "tuyensinh@adu.edu.vn" },
+      { icon: "mail", label: "Email", value: "tuyensinh@lumina.edu.vn" },
     ],
   },
 }

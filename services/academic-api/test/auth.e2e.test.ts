@@ -2,7 +2,7 @@
 // Chạy: npm test
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import type { INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import pg from 'pg';
 import request from 'supertest';
@@ -17,10 +17,10 @@ process.env.DB_NAME = TEST_DB;
 process.env.DB_SYNCHRONIZE = 'true';
 process.env.NODE_ENV = 'test';
 
-let app: INestApplication;
+let app: NestExpressApplication;
 let http: ReturnType<typeof request>;
 
-const api = (path: string) => `/api${path}`;
+const api = (path: string) => `/api/v1${path}`;
 const bearer = (t: string) => ({ Authorization: `Bearer ${t}` });
 
 async function recreateDatabase() {
@@ -52,7 +52,7 @@ describe('Auth & phân quyền', () => {
     const { Role } = await import('../src/common/enums/role.enum.js');
 
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-    app = moduleRef.createNestApplication();
+    app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);
     await app.init();
     http = request(app.getHttpServer());
@@ -71,6 +71,13 @@ describe('Auth & phân quyền', () => {
   describe('xác thực', () => {
     it('health là public', async () => {
       await http.get(api('/health')).expect(200);
+    });
+
+    it('giữ X-Request-ID nhận từ Portal, tự sinh nếu không có', async () => {
+      const kept = await http.get(api('/health')).set('X-Request-ID', 'trace-from-portal-1');
+      assert.equal(kept.headers['x-request-id'], 'trace-from-portal-1');
+      const made = await http.get(api('/health'));
+      assert.match(made.headers['x-request-id'], /^[0-9a-f-]{36}$/);
     });
 
     it('không có token => 401', async () => {

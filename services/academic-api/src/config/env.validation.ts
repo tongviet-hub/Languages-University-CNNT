@@ -1,4 +1,5 @@
 import { plainToInstance } from 'class-transformer';
+import { parseTrustProxy } from '../common/trust-proxy.js';
 import { IsBooleanString, IsIn, IsInt, IsOptional, IsString, Max, Min, MinLength, validateSync } from 'class-validator';
 
 /** Kiểm tra biến môi trường ngay lúc khởi động: thiếu/sai thì app dừng luôn thay vì chạy sai âm thầm. */
@@ -11,6 +12,10 @@ class EnvironmentVariables {
 
   @IsOptional() @IsString()
   CORS_ORIGINS?: string;
+
+  /** IP/subnet của proxy được tin (Portal). Để trống = không tin ai. Xem common/trust-proxy.ts. */
+  @IsOptional() @IsString()
+  TRUST_PROXY?: string;
 
   @IsString() DB_HOST: string;
   @IsInt() @Min(1) @Max(65535) DB_PORT: number;
@@ -34,5 +39,6 @@ export function validateEnv(config: Record<string, unknown>) {
     const details = errors.map((e) => `${e.property}: ${Object.values(e.constraints ?? {}).join(', ')}`);
     throw new Error(`Cấu hình .env không hợp lệ:\n - ${details.join('\n - ')}`);
   }
+  parseTrustProxy(validated.TRUST_PROXY); // ném lỗi ngay lúc khởi động nếu giá trị nguy hiểm
   return validated;
 }

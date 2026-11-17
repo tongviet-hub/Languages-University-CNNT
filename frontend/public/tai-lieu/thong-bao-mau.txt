@@ -1,4 +1,4 @@
-THONG BAO MAU - THPT Anh Duong
+THONG BAO MAU - Dai hoc Ngoai ngu Lumina
 
 Day la tai lieu mau de kiem thu chuc nang tai tai lieu (KT1) cua de tai 05.
 Neu cau tai duoc file nay bang ten mien truong.test thi web server dang phuc vu dung thu muc noi dung.

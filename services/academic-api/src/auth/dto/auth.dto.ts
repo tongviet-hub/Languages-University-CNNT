@@ -7,7 +7,7 @@ const normalizeEmail = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim().toLowerCase() : value;
 
 export class RegisterDto {
-  @ApiProperty({ example: 'hocsinh.moi@sv.adu.edu.vn' })
+  @ApiProperty({ example: 'hocsinh.moi@sv.lumina.edu.vn' })
   @Transform(normalizeEmail)
   @IsEmail()
   @MaxLength(255)
@@ -25,7 +25,7 @@ export class RegisterDto {
 }
 
 export class LoginDto {
-  @ApiProperty({ example: 'student@adu.edu.vn' })
+  @ApiProperty({ example: 'student@lumina.edu.vn' })
   @Transform(normalizeEmail)
   @IsEmail()
   email: string;

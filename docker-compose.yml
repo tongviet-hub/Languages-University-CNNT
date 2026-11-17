@@ -1,0 +1,107 @@
+# Chế độ demo cục bộ: mở cổng cả 3 dịch vụ để Postman gọi trực tiếp từng API.
+#   cp .env.example .env   (rồi điền mật khẩu DB và JWT secret thật)
+#   docker compose up -d --build
+#   docker compose exec academic-api node dist/database/seed.js    # tạo 3 tài khoản demo
+# Chế độ triển khai (chỉ Portal công khai): thêm -f docker-compose.deploy.yml
+#
+# Về X-Forwarded-For (IP người dùng thật):
+#   - Academic chỉ tin header này từ ĐÚNG IP của Portal (172.30.0.10, cố định bên dưới).
+#     Ai gọi thẳng vào Academic (qua cổng demo 8081) đều đi qua gateway 172.30.0.1 -> không được tin -> không giả IP được.
+#   - Portal mặc định không tin ai. Chỉ khi đặt Nginx phía trước mới đặt PORTAL_TRUST_PROXY (xem .env.example).
+#   - Cổng demo của Academic/Finance chỉ mở trên 127.0.0.1, máy khác trong LAN không gọi thẳng được.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    networks: [backend]
+    environment:
+      POSTGRES_USER: school
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Cần đặt DB_PASSWORD trong .env}
+      POSTGRES_DB: school_portal
+    volumes:
+      - academic-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U school -d school_portal"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  academic-api:
+    build: ./services/academic-api
+    restart: unless-stopped
+    networks: [backend]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      # Chưa có migration nên dùng chế độ development (tự tạo bảng, cho phép seed).
+      # Trước khi chạy thật phải viết migration rồi mới chuyển NODE_ENV=production.
+      NODE_ENV: development
+      PORT: "8081"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: school
+      DB_PASSWORD: ${DB_PASSWORD:?Cần đặt DB_PASSWORD trong .env}
+      DB_NAME: school_portal
+      DB_SYNCHRONIZE: "true"
+      TRUST_PROXY: 172.30.0.10   # chỉ tin Portal
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Cần đặt JWT_ACCESS_SECRET (>= 32 ký tự) trong .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Cần đặt JWT_REFRESH_SECRET (>= 32 ký tự) trong .env}
+      JWT_ACCESS_TTL_SECONDS: "900"
+      JWT_REFRESH_TTL_SECONDS: "604800"
+    ports:
+      - "127.0.0.1:8081:8081"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/api/v1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  finance-api:
+    build: ./services/finance-api
+    restart: unless-stopped
+    networks: [backend]
+    environment:
+      PORT: "8082"
+    ports:
+      - "127.0.0.1:8082:8082"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/api/v1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  portal:
+    build: ./services/portal
+    restart: unless-stopped
+    networks:
+      backend:
+        ipv4_address: 172.30.0.10   # IP cố định để Academic chỉ tin đúng địa chỉ này
+    # Không dùng service_healthy: Portal phải khởi động được (và demo được) ngay cả khi một API con đang chết.
+    depends_on:
+      academic-api: { condition: service_started }
+      finance-api: { condition: service_started }
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      ACADEMIC_URL: http://academic-api:8081
+      FINANCE_URL: http://finance-api:8082
+      UPSTREAM_TIMEOUT_MS: "2000"
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      TRUST_PROXY: ${PORTAL_TRUST_PROXY:-false}
+    ports:
+      - "${PORTAL_BIND:-0.0.0.0}:${PORTAL_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/v1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  backend:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+          gateway: 172.30.0.1
+
+volumes:
+  academic-pgdata:
