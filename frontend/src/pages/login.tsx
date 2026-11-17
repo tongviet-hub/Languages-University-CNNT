@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { BookOpen, CalendarCheck, GraduationCap, Sparkles } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -11,17 +11,11 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ApiRequestError } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth"
 import { brand } from "@/lib/brand"
 import type { DictKey } from "@/lib/dictionary"
 import { useI18n } from "@/lib/i18n"
-import { demoUsers, type Role } from "@/lib/mock-data"
-import { cn } from "@/lib/utils"
-
-const roles: { value: Role; labelKey: DictKey }[] = [
-  { value: "student", labelKey: "login.student" },
-  { value: "teacher", labelKey: "login.teacher" },
-]
 
 const highlights: { icon: typeof BookOpen; textKey: DictKey }[] = [
   { icon: CalendarCheck, textKey: "login.highlight1" },
@@ -34,13 +28,12 @@ export default function LoginPage() {
   const { t, tr } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
-  const [role, setRole] = useState<Role>("student")
 
   const schema = useMemo(
     () =>
       z.object({
         email: z.string().min(1, t("login.err.emailRequired")).email(t("login.err.emailInvalid")),
-        password: z.string().min(6, t("login.err.passwordMin")),
+        password: z.string().min(1, t("login.err.passwordRequired")),
       }),
     [t]
   )
@@ -52,7 +45,7 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: demoUsers.student.email, password: "123456" },
+    defaultValues: { email: "", password: "" },
   })
 
   if (user) return <Navigate to="/dashboard" replace />
@@ -60,10 +53,14 @@ export default function LoginPage() {
   const from = (location.state as { from?: string } | null)?.from ?? "/dashboard"
 
   const onSubmit = async (values: FormValues) => {
-    await new Promise((r) => setTimeout(r, 500))
-    login(role, values.email)
-    toast.success(t("login.welcome", { name: demoUsers[role].name }))
-    navigate(from, { replace: true })
+    try {
+      const me = await login(values.email, values.password)
+      toast.success(t("login.welcome", { name: me.name }))
+      navigate(from, { replace: true })
+    } catch (err) {
+      // Backend trả thông báo tiếng Việt sẵn (sai mật khẩu, đăng nhập quá nhiều lần...)
+      toast.error(err instanceof ApiRequestError && err.status !== 0 ? err.message : t("login.err.network"))
+    }
   }
 
   return (
@@ -118,29 +115,6 @@ export default function LoginPage() {
           <h2 className="text-2xl font-semibold tracking-tight">{t("login.title")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("login.subtitle")}</p>
 
-          <div
-            role="radiogroup"
-            aria-label={t("login.role")}
-            className="mt-6 grid grid-cols-2 gap-1 rounded-md bg-muted p-1"
-          >
-            {roles.map((r) => (
-              <button
-                key={r.value}
-                type="button"
-                role="radio"
-                aria-checked={role === r.value}
-                onClick={() => setRole(r.value)}
-                className={cn(
-                  "rounded-md py-2 text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  role === r.value
-                    ? "bg-card text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {t(r.labelKey)}
-              </button>
-            ))}
-          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
             <div className="space-y-1.5">

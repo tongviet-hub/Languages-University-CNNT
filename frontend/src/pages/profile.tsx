@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ApiRequestError } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth"
 import type { DictKey } from "@/lib/dictionary"
 import { formatDate, initials } from "@/lib/format"
@@ -33,7 +34,7 @@ const passwordFields = [
 ] as const
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, changePassword, logout } = useAuth()
   const { theme, setTheme } = useTheme()
   const { lang, setLang, t, tr, locale } = useI18n()
 
@@ -42,7 +43,7 @@ export default function ProfilePage() {
       z
         .object({
           current: z.string().min(1, t("prof.err.current")),
-          next: z.string().min(8, t("prof.err.newMin")).regex(/[0-9]/, t("prof.err.newDigit")),
+          next: z.string().min(8, t("prof.err.newMin")).regex(/(?=.*[A-Za-z])(?=.*\d)/, t("prof.err.newDigit")),
           confirm: z.string(),
         })
         .refine((v) => v.next === v.confirm, { path: ["confirm"], message: t("prof.err.confirm") }),
@@ -67,10 +68,16 @@ export default function ProfilePage() {
     { icon: MapPin, label: t("prof.address"), value: tr(user.address) },
   ]
 
-  const onSubmit = async () => {
-    await new Promise((r) => setTimeout(r, 600))
-    toast.success(t("prof.updated"))
-    reset()
+  const onSubmit = async (values: PasswordValues) => {
+    try {
+      await changePassword(values.current, values.next)
+      reset()
+      toast.success(t("prof.updated"))
+      // Backend đã thu hồi mọi phiên đăng nhập -> đăng xuất, AppLayout tự chuyển về /login
+      await logout()
+    } catch (err) {
+      toast.error(err instanceof ApiRequestError && err.status !== 0 ? err.message : t("login.err.network"))
+    }
   }
 
   return (

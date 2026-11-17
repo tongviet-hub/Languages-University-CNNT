@@ -100,8 +100,7 @@ export function AppSidebar() {
             type="button"
             aria-label={t("common.logout")}
             onClick={() => {
-              logout()
-              navigate("/login", { replace: true })
+              void logout().then(() => navigate("/login", { replace: true }))
             }}
             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none group-data-[collapsible=icon]:hidden"
           >

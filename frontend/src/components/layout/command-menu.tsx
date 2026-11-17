@@ -69,8 +69,7 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
           <CommandItem
             onSelect={() =>
               run(() => {
-                logout()
-                navigate("/login", { replace: true })
+                void logout().then(() => navigate("/login", { replace: true }))
               })
             }
           >
