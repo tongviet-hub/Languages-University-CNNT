@@ -9,6 +9,7 @@ import { AuthShell } from "@/components/auth/auth-shell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PasswordInput } from "@/components/ui/password-input"
 import { ApiRequestError } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth"
 import { useI18n } from "@/lib/i18n"
@@ -70,9 +71,8 @@ export default function LoginPage() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">{t("login.password")}</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="current-password"
             aria-invalid={!!errors.password}
             {...register("password")}

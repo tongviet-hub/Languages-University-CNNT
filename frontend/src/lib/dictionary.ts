@@ -4,6 +4,8 @@ const vi = {
   "common.switchLanguage": "Đổi ngôn ngữ",
   "common.backHome": "← Về trang chủ",
   "common.close": "Đóng",
+  "common.showPassword": "Hiện mật khẩu",
+  "common.hidePassword": "Ẩn mật khẩu",
   "common.logout": "Đăng xuất",
   "common.copyright": "© {year} {name}. Bản demo giao diện.",
 
@@ -212,6 +214,8 @@ const en: Record<DictKey, string> = {
   "common.switchLanguage": "Change language",
   "common.backHome": "← Back to home",
   "common.close": "Close",
+  "common.showPassword": "Show password",
+  "common.hidePassword": "Hide password",
   "common.logout": "Log out",
   "common.copyright": "© {year} {name}. Interface demo.",
 

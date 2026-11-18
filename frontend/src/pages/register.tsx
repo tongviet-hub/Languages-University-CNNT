@@ -9,6 +9,7 @@ import { AuthShell } from "@/components/auth/auth-shell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PasswordInput } from "@/components/ui/password-input"
 import { ApiRequestError } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth"
 import { useI18n } from "@/lib/i18n"
@@ -76,14 +77,24 @@ export default function RegisterPage() {
         {fields.map((f) => (
           <div key={f.name} className="space-y-1.5">
             <Label htmlFor={f.name}>{f.label}</Label>
-            <Input
-              id={f.name}
-              type={f.type}
-              autoComplete={f.autoComplete}
-              placeholder={f.placeholder}
-              aria-invalid={!!errors[f.name]}
-              {...register(f.name)}
-            />
+            {f.type === "password" ? (
+              <PasswordInput
+                id={f.name}
+                autoComplete={f.autoComplete}
+                placeholder={f.placeholder}
+                aria-invalid={!!errors[f.name]}
+                {...register(f.name)}
+              />
+            ) : (
+              <Input
+                id={f.name}
+                type={f.type}
+                autoComplete={f.autoComplete}
+                placeholder={f.placeholder}
+                aria-invalid={!!errors[f.name]}
+                {...register(f.name)}
+              />
+            )}
             {errors[f.name] && <p className="text-xs text-destructive">{errors[f.name]?.message}</p>}
           </div>
         ))}

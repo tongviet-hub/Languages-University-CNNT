@@ -11,8 +11,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PasswordInput } from "@/components/ui/password-input"
 import { ApiRequestError } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth"
 import type { DictKey } from "@/lib/dictionary"
@@ -130,9 +130,8 @@ export default function ProfilePage() {
               {passwordFields.map(([name, labelKey, autoComplete]) => (
                 <div key={name} className="space-y-1.5">
                   <Label htmlFor={name}>{t(labelKey)}</Label>
-                  <Input
+                  <PasswordInput
                     id={name}
-                    type="password"
                     autoComplete={autoComplete}
                     aria-invalid={!!errors[name]}
                     {...register(name)}
