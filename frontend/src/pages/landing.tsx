@@ -5,6 +5,8 @@ import {
   Briefcase,
   Building2,
   CalendarDays,
+  Download,
+  FileText,
   Languages,
   Mail,
   MapPin,
@@ -323,6 +325,31 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
+        </section>
+
+        {/* Documents: file tĩnh trong public/tai-lieu, tải trực tiếp không cần đăng nhập (KT1) */}
+        <section id="tai-lieu" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6">
+          <SectionHeading eyebrow={c.documents.eyebrow} title={c.documents.title} text={c.documents.text} />
+          <ul className="mx-auto mt-12 grid max-w-3xl gap-4">
+            {c.documents.items.map((d) => (
+              <li key={d.href} className="flex flex-col gap-4 rounded-md border bg-card p-5 sm:flex-row sm:items-center">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <FileText className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Badge variant="secondary">{d.format}</Badge>
+                    <time className="text-muted-foreground">{d.date}</time>
+                  </div>
+                  <h3 className="mt-1.5 font-semibold">{d.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{d.description}</p>
+                </div>
+                <Button variant="outline" nativeButton={false} render={<a href={d.href} download />}>
+                  <Download /> {c.documents.download}
+                </Button>
+              </li>
+            ))}
+          </ul>
         </section>
 
         {/* CTA */}

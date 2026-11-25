@@ -23,6 +23,14 @@ export interface NewsItem {
   text: string
 }
 
+export interface DocumentItem {
+  href: string
+  title: string
+  description: string
+  format: string
+  date: string
+}
+
 export interface LandingContent {
   nav: { href: string; label: string }[]
   ui: {
@@ -62,6 +70,7 @@ export interface LandingContent {
   admissions: { eyebrow: string; title: string; text: string; consult: string }
   steps: { date: string; title: string; text: string }[]
   news: { eyebrow: string; title: string; items: NewsItem[] }
+  documents: { eyebrow: string; title: string; text: string; download: string; items: DocumentItem[] }
   cta: { title: string; text: string; primary: string; secondary: string }
   contactSection: {
     eyebrow: string
@@ -77,6 +86,7 @@ const vi: LandingContent = {
     { href: "#vi-sao-chon", label: "Vì sao chọn chúng tôi" },
     { href: "#tuyen-sinh", label: "Tuyển sinh" },
     { href: "#tin-tuc", label: "Tin tức" },
+    { href: "#tai-lieu", label: "Tài liệu" },
     { href: "#lien-he", label: "Liên hệ" },
   ],
   ui: {
@@ -232,6 +242,21 @@ const vi: LandingContent = {
       },
     ],
   },
+  documents: {
+    eyebrow: "Tài liệu & thông báo",
+    title: "Văn bản, biểu mẫu của nhà trường",
+    text: "Tải trực tiếp các thông báo và tài liệu chính thức, không cần đăng nhập.",
+    download: "Tải về",
+    items: [
+      {
+        href: "/tai-lieu/thong-bao-mau.txt",
+        title: "Thông báo mẫu",
+        description: "Tài liệu mẫu dùng để kiểm thử chức năng tải tài liệu qua tên miền.",
+        format: "TXT",
+        date: "20/11/2026",
+      },
+    ],
+  },
   cta: {
     title: "Bắt đầu hành trình ngoại ngữ của cậu từ hôm nay",
     text: "Hồ sơ xét tuyển nhận đến hết ngày 30/05. Đội ngũ tư vấn sẽ liên hệ trong 24 giờ.",
@@ -256,6 +281,7 @@ const en: LandingContent = {
     { href: "#vi-sao-chon", label: "Why choose us" },
     { href: "#tuyen-sinh", label: "Admissions" },
     { href: "#tin-tuc", label: "News" },
+    { href: "#tai-lieu", label: "Documents" },
     { href: "#lien-he", label: "Contact" },
   ],
   ui: {
@@ -408,6 +434,21 @@ const en: LandingContent = {
         date: "Oct 28, 2026",
         title: "Students win first prize at the national English Debate",
         text: "Our team outperformed 48 teams from universities across the country.",
+      },
+    ],
+  },
+  documents: {
+    eyebrow: "Documents & notices",
+    title: "Official notices and forms",
+    text: "Download official notices and documents directly, no sign-in required.",
+    download: "Download",
+    items: [
+      {
+        href: "/tai-lieu/thong-bao-mau.txt",
+        title: "Sample notice",
+        description: "A sample document used to test downloading files via the domain name.",
+        format: "TXT",
+        date: "Nov 20, 2026",
       },
     ],
   },
