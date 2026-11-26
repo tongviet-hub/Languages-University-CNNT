@@ -2,11 +2,6 @@
 
 Website cho trường học: sinh viên, giáo viên, quản trị viên đăng nhập để xem **thời khóa biểu, điểm, điểm danh, thông báo, hồ sơ cá nhân**.
 
-Repo này phục vụ hai môn:
-
-- **THHT – Chủ đề 04 (REST API Portal):** viết backend theo kiểu **microservice** (nhiều dịch vụ nhỏ, mỗi dịch vụ một việc).
-- **CNNT – Đề tài 05 (Website trường học):** đưa website lên máy chủ thật, cấu hình hệ điều hành, bảo mật, sao lưu.
-
 ---
 
 ## Mục lục
@@ -84,11 +79,7 @@ Trình duyệt (frontend)
 │
 ├── docker-compose.yml         ← chạy cả 3 dịch vụ + PostgreSQL bằng 1 lệnh
 ├── docker-compose.deploy.yml  ← dùng thêm khi triển khai thật: chỉ mở Portal ra ngoài
-├── .env.example               ← mẫu biến môi trường (copy thành .env rồi điền)
-│
-└── Documents/                 ← TÀI LIỆU MÔN HỌC (không phải code)
-    ├── THHT requirements/     ← đề bài THHT Chủ đề 04
-    └── CNNT requirements/     ← đề bài CNNT, hướng dẫn SV2, báo cáo cá nhân, báo cáo nhóm
+└── .env.example               ← mẫu biến môi trường (copy thành .env rồi điền)
 ```
 
 Bên trong mỗi dịch vụ backend có cấu trúc giống nhau:
@@ -321,18 +312,6 @@ Trình duyệt ──cổng 80──► Nginx ──/ ────────�
   ```
 
   (giải thích trong `.env.example`).
-
-**Tài liệu hướng dẫn** nằm trong `Documents/CNNT requirements/`:
-
-| File | Nội dung |
-|---|---|
-| `yeu_cau_bai_tap_nhom.md` | Đề bài nhóm |
-| `HUONG_DAN_DOC_YEU_CAU_BAI_TAP_NHOM.md` | Giải thích đề bài cho dễ hiểu |
-| `HUONG_DAN_SV2_UBUNTU.md` | Hướng dẫn SV2 cài web, Nginx, cấu hình hệ điều hành trên Ubuntu |
-| `HUONG_DAN_SV2_ADVANCE.md` | Bản nâng cao: triển khai không gián đoạn, rollback, sandbox systemd, AppArmor... |
-| `LENH_CHUP_ANH_SV2.md` | Các lệnh cần chạy để chụp ảnh minh chứng |
-| `mau_bao_cao_ca_nhan.md` | Mẫu báo cáo cá nhân |
-| `bao_cao_*.md` | Các báo cáo đã viết |
 
 **Ba bài nghiệm thu của đề:**
 
