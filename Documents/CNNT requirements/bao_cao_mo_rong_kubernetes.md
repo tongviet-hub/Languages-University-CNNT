@@ -11,7 +11,7 @@
 * **Nhóm:** ...............................................................
 * **Người thực hiện phần mở rộng:** .................................... (Mã SV: ....................)
 * **Website triển khai thật:** `https://lumina.synnie.dev`
-* **Mã nguồn ứng dụng:** repo `School Portal` (thư mục `frontend/`, `services/`)
+* **Mã nguồn ứng dụng:** repo `School Portal` (thư mục `frontend/`, `backend/`)
 * **Mã nguồn hạ tầng (Infrastructure as Code):** repo `synnie-studio/infra`, thư mục `apps/portal/` và `argocd/`
 
 ### TÓM TẮT
@@ -283,7 +283,7 @@ server {
 }
 ```
 
-**Backend (NestJS)** – `services/*/Dockerfile` cũng build 2 tầng, sau khi build chạy `npm prune --omit=dev` để bỏ thư viện chỉ dùng khi phát triển, và có dòng `USER node` để tiến trình chạy bằng user thường.
+**Backend (NestJS)** – `backend/*/Dockerfile` cũng build 2 tầng, sau khi build chạy `npm prune --omit=dev` để bỏ thư viện chỉ dùng khi phát triển, và có dòng `USER node` để tiến trình chạy bằng user thường.
 
 | Image | Kích thước (bản đầu) |
 |---|---|

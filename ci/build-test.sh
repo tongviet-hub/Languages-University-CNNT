@@ -10,7 +10,7 @@ NAME="${1:?Cần tên thành phần: frontend | portal | academic-api | finance-
 
 case "$NAME" in
   frontend) DIR="$ROOT/frontend" ;;
-  portal | academic-api | finance-api) DIR="$ROOT/services/$NAME" ;;
+  portal | academic-api | finance-api) DIR="$ROOT/backend/$NAME" ;;
   *) echo "build-test: không biết thành phần '$NAME'" >&2; exit 2 ;;
 esac
 cd "$DIR"

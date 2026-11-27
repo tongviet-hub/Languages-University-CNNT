@@ -27,7 +27,7 @@ services:
       retries: 10
 
   academic-api:
-    build: ./services/academic-api
+    build: ./backend/academic-api
     restart: unless-stopped
     networks: [backend]
     depends_on:
@@ -57,7 +57,7 @@ services:
       retries: 10
 
   finance-api:
-    build: ./services/finance-api
+    build: ./backend/finance-api
     restart: unless-stopped
     networks: [backend]
     environment:
@@ -71,7 +71,7 @@ services:
       retries: 10
 
   portal:
-    build: ./services/portal
+    build: ./backend/portal
     restart: unless-stopped
     networks:
       backend:

@@ -3,7 +3,7 @@
 # thì bước tương ứng bị SKIP chứ không fail. Cuối cùng in bảng tổng kết.
 #   bash ci/start-ci.sh                 # tất cả thành phần
 #   bash ci/start-ci.sh portal frontend # chỉ vài thành phần
-# Test của academic-api cần PostgreSQL đang chạy theo services/academic-api/.env.
+# Test của academic-api cần PostgreSQL đang chạy theo backend/academic-api/.env.
 set -uo pipefail
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -25,7 +25,7 @@ if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
   soft_step "scan-secrets" bash "$DIR/scan-secrets.sh"
   soft_step "scan-deps" bash "$DIR/scan-deps.sh"
   for c in "${COMPONENTS[@]}"; do
-    ctx="$ROOT/services/$c"; [[ "$c" == frontend ]] && ctx="$ROOT/frontend"
+    ctx="$ROOT/backend/$c"; [[ "$c" == frontend ]] && ctx="$ROOT/frontend"
     ref="portal-$c:ci-local"
     step "docker-build $c" docker build -t "$ref" "$ctx"
     step "scan-image $c" bash "$DIR/scan-image.sh" "$ref"

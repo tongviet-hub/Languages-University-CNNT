@@ -52,11 +52,11 @@ jobs:
           - image: portal-frontend
             context: frontend
           - image: portal-portal
-            context: services/portal
+            context: backend/portal
           - image: portal-academic
-            context: services/academic-api
+            context: backend/academic-api
           - image: portal-finance
-            context: services/finance-api
+            context: backend/finance-api
     steps:
       - uses: actions/checkout@v7
         with:

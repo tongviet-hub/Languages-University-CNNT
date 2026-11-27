@@ -1,118 +1,213 @@
 # School Portal – Cổng thông tin trường học
 
-Website cổng thông tin cho trường học (thời khóa biểu, điểm, điểm danh, thông báo, hồ sơ cá nhân), kèm một **backend xác thực & phân quyền** theo vai trò. Dự án làm cho **Đề tài 05 – Website trường học**: ngoài việc có website chạy được, nhóm còn phải **triển khai nó lên máy chủ, cấu hình hệ điều hành, đảm bảo an toàn và có sao lưu** (xem [Triển khai & vận hành](#triển-khai--vận-hành-đề-tài-05)).
+Website cho trường học: sinh viên, giáo viên, quản trị viên đăng nhập để xem **thời khóa biểu, điểm, điểm danh, thông báo, hồ sơ cá nhân**.
+
+Repo này phục vụ hai môn:
+
+- **THHT – Chủ đề 04 (REST API Portal):** viết backend theo kiểu **microservice** (nhiều dịch vụ nhỏ, mỗi dịch vụ một việc).
+- **CNNT – Đề tài 05 (Website trường học):** đưa website lên máy chủ thật, cấu hình hệ điều hành, bảo mật, sao lưu.
+
+---
 
 ## Mục lục
 
-- [Trạng thái hiện tại](#trạng-thái-hiện-tại)
-- [Tính năng](#tính-năng)
-- [Công nghệ](#công-nghệ)
-- [Cấu trúc thư mục](#cấu-trúc-thư-mục)
-- [Chạy trên máy cá nhân](#chạy-trên-máy-cá-nhân)
-- [Backend API](#backend-api)
-- [Triển khai & vận hành (Đề tài 05)](#triển-khai--vận-hành-đề-tài-05)
-- [Phân công nhóm](#phân-công-nhóm)
-- [Quy tắc bảo mật khi làm việc với repo](#quy-tắc-bảo-mật-khi-làm-việc-với-repo)
+1. [Hiểu nhanh trong 1 phút](#1-hiểu-nhanh-trong-1-phút)
+2. [Bản đồ thư mục](#2-bản-đồ-thư-mục)
+3. [Muốn sửa X thì vào đâu?](#3-muốn-sửa-x-thì-vào-đâu)
+4. [Đã làm được gì, còn thiếu gì](#4-đã-làm-được-gì-còn-thiếu-gì)
+5. [Chạy thử trên máy mình](#5-chạy-thử-trên-máy-mình)
+6. [Backend: các đường dẫn API](#6-backend-các-đường-dẫn-api)
+7. [CI/CD (tự động kiểm tra và triển khai)](#7-cicd-tự-động-kiểm-tra-và-triển-khai)
+8. [Triển khai lên máy chủ (Đề tài 05)](#8-triển-khai-lên-máy-chủ-đề-tài-05)
+9. [Phân công nhóm](#9-phân-công-nhóm)
+10. [Quy tắc bảo mật](#10-quy-tắc-bảo-mật)
+11. [Từ điển thuật ngữ](#11-từ-điển-thuật-ngữ)
 
-## Trạng thái hiện tại
+---
 
-| Phần | Tình trạng |
-|---|---|
-| **Frontend** (`frontend/`) | Chạy được đầy đủ giao diện. **Dữ liệu và đăng nhập đang là dữ liệu mẫu** (mock): vai trò lưu trong `localStorage`, chưa gọi API thật. |
-| **Backend** (`services/`) | Chia **3 microservice** theo đề THHT Chủ đề 04: **Portal** (điểm vào duy nhất, điều phối), **Academic API** (đăng nhập, phân quyền, quản lý người dùng; sau này thêm sinh viên), **Finance API** (mới có khung `/health`). Có test e2e cho Portal và Academic. **Chưa được frontend sử dụng.** |
-| **Tài liệu triển khai** (`../docs/`, ngoài repo) | Hướng dẫn cài web server, cấu hình hệ điều hành, hardening (Windows, Ubuntu, nâng cao). Không nằm trong repo này. |
+## 1. Hiểu nhanh trong 1 phút
 
-> Nối frontend với backend (thay `frontend/src/api` và `frontend/src/lib/auth.tsx` bằng lời gọi `/api/v1/portal/...`) là bước tiếp theo, chưa làm.
+Hệ thống có **2 nửa**:
 
-## Tính năng
+| Nửa | Thư mục | Là gì | Viết bằng |
+|---|---|---|---|
+| **Frontend** | `frontend/` | Giao diện người dùng thấy trên trình duyệt | React + TypeScript |
+| **Backend** | `backend/` | Máy chủ xử lý đăng nhập, phân quyền, lưu dữ liệu | NestJS + PostgreSQL |
 
-**Frontend**
-- Trang giới thiệu (landing) có form đăng ký tư vấn.
-- Đăng nhập demo theo vai trò.
-- Bảng điều khiển, **thời khóa biểu**, **bảng điểm**, **điểm danh theo tháng**, **thông báo**, **bài tập**, **hồ sơ cá nhân**.
-- Đa ngôn ngữ (chuyển ngôn ngữ trên giao diện), chế độ sáng/tối, menu lệnh nhanh (command menu), tải trang theo yêu cầu (lazy loading).
+Backend lại chia thành **3 dịch vụ nhỏ**:
 
-**Backend**
-- Đăng ký (luôn tạo tài khoản *student*), đăng nhập, làm mới token, đăng xuất, đổi mật khẩu.
-- Phân quyền theo vai trò **admin / teacher / student**; admin quản lý người dùng, teacher chỉ xem được student.
-- Thiết kế an toàn: access token 15 phút + refresh token 7 ngày có **xoay vòng**, mật khẩu băm bcrypt, giới hạn tốc độ (rate limit), kiểm tra dữ liệu đầu vào nghiêm ngặt, `helmet`.
+| Dịch vụ | Cổng | Nhiệm vụ | Có database? |
+|---|---|---|---|
+| **Portal** | 8080 | "Cửa chính". Frontend **chỉ** nói chuyện với Portal. Portal nhận yêu cầu rồi chuyển cho dịch vụ phù hợp. | Không |
+| **Academic API** | 8081 | Đăng ký, đăng nhập, phân quyền, quản lý người dùng | Có (PostgreSQL) |
+| **Finance API** | 8082 | Học phí, thanh toán. **Hiện mới có khung rỗng.** | Chưa |
 
-## Công nghệ
+Một lần đăng nhập đi như sau:
 
-| Lớp | Công nghệ |
-|---|---|
-| Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 4, shadcn/ui + Base UI, React Router 7, TanStack Query, React Hook Form + Zod, Recharts |
-| Backend | NestJS 12 (ESM), TypeORM, PostgreSQL, Passport JWT, class-validator, Swagger, Helmet, Throttler |
-| Triển khai (Đề tài 05) | Nginx, systemd, ufw, (AppArmor, cgroup trong bản nâng cao), PostgreSQL |
+```
+Trình duyệt (frontend)
+      │  POST /api/v1/portal/auth/login
+      ▼
+   Portal (8080)  ── chuyển tiếp ──►  Academic API (8081)  ──►  PostgreSQL
+      ▲                                       │
+      └──────── trả về token + thông tin ─────┘
+```
 
-## Cấu trúc thư mục
+---
+
+## 2. Bản đồ thư mục
 
 ```
 .
-├── frontend/          # Website (React + Vite). `npm run build` → frontend/dist (file tĩnh)
-│   ├── public/tai-lieu/   # Tài liệu tải về (vd: thong-bao-mau.txt)
-│   └── src/
-│       ├── pages/         # landing, login, dashboard, schedule, grades, attendance, announcements, profile
-│       ├── components/    # layout, ui, landing, common
-│       ├── api/           # hàm lấy dữ liệu (hiện là dữ liệu mẫu)
-│       └── lib/           # auth, dữ liệu mẫu, từ điển đa ngôn ngữ
-├── services/          # Backend chia microservice (NestJS)
-│   ├── portal/        # Điểm vào duy nhất, không có DB: chuyển tiếp đăng nhập, xác thực token, gọi API con (timeout 2s)
-│   ├── academic-api/  # Đăng nhập, phân quyền, người dùng (PostgreSQL riêng) - xem services/academic-api/README.md
-│   └── finance-api/   # Khung tối thiểu (/health); học phí & thanh toán làm ở giai đoạn sau
-├── docker-compose.yml         # chạy cả 3 dịch vụ + PostgreSQL (demo: mở cả 3 cổng)
-├── docker-compose.deploy.yml  # ghi đè khi triển khai: chỉ Portal công khai
-├── .env.example               # mẫu biến môi trường cho compose
-├── THHT requirements/         # Đề bài THHT
-└── README.md
+├── frontend/                  ← GIAO DIỆN (React + Vite)
+│   ├── src/
+│   │   ├── pages/             ← mỗi file là một trang: login, dashboard, grades, schedule...
+│   │   ├── components/        ← các mảnh giao diện dùng lại (menu, nút, thẻ, layout...)
+│   │   ├── api/               ← hàm lấy dữ liệu cho các trang (hiện vẫn là dữ liệu mẫu)
+│   │   └── lib/
+│   │       ├── api-client.ts  ← gọi API thật tới Portal (đăng nhập, đăng ký, refresh token...)
+│   │       ├── auth.tsx       ← quản lý trạng thái đăng nhập
+│   │       ├── mock-data.ts   ← dữ liệu giả (điểm, lịch học...)
+│   │       └── dictionary.ts  ← chữ hiển thị cho từng ngôn ngữ
+│   ├── public/                ← file tĩnh (ảnh, tài liệu tải về)
+│   ├── Dockerfile, nginx.conf ← đóng gói frontend thành image Docker
+│   └── vite.config.ts         ← cấu hình Vite (khi dev, chuyển /api sang localhost:8080)
+│
+├── backend/                   ← MÁY CHỦ (NestJS), chia 3 dịch vụ
+│   ├── portal/                ← cửa chính, không có DB
+│   ├── academic-api/          ← đăng nhập, người dùng, có DB  (xem README riêng bên trong)
+│   ├── finance-api/           ← khung tối thiểu (/health)
+│   └── dist-test/             ← bản build cũ, không cần quan tâm
+│
+├── ci/                        ← script kiểm tra tự động (build, test, quét bảo mật)
+├── .github/workflows/         ← GitHub Actions gọi các script trong ci/ (có README riêng)
+│
+├── docker-compose.yml         ← chạy cả 3 dịch vụ + PostgreSQL bằng 1 lệnh
+├── docker-compose.deploy.yml  ← dùng thêm khi triển khai thật: chỉ mở Portal ra ngoài
+├── .env.example               ← mẫu biến môi trường (copy thành .env rồi điền)
+│
+└── Documents/                 ← TÀI LIỆU MÔN HỌC (không phải code)
+    ├── THHT requirements/     ← đề bài THHT Chủ đề 04
+    └── CNNT requirements/     ← đề bài CNNT, hướng dẫn SV2, báo cáo cá nhân, báo cáo nhóm
 ```
-Hướng dẫn triển khai & vận hành (Đề tài 05) nằm ở thư mục `docs/` **cạnh** thư mục dự án (`KEY_PROJECT/docs/`), không thuộc repo này.
 
-## Chạy trên máy cá nhân
+Bên trong mỗi dịch vụ backend có cấu trúc giống nhau:
 
-Yêu cầu: **Node.js ≥ 22**, npm. Backend cần thêm PostgreSQL (hoặc Docker).
+```
+backend/<tên-dịch-vụ>/
+├── src/            ← code chính (main.ts là điểm khởi động)
+├── test/           ← test e2e
+├── Dockerfile      ← đóng gói thành image Docker
+├── package.json    ← thư viện và các lệnh npm
+└── .env.example    ← mẫu cấu hình khi chạy riêng dịch vụ này (finance-api chưa có)
+```
 
-### Frontend
+---
+
+## 3. Muốn sửa X thì vào đâu?
+
+| Muốn... | Mở file / thư mục |
+|---|---|
+| Sửa giao diện một trang (vd trang điểm) | `frontend/src/pages/grades.tsx` |
+| Thêm trang mới | tạo file trong `frontend/src/pages/`, rồi khai báo đường dẫn trong `frontend/src/App.tsx` |
+| Sửa menu bên trái, thanh trên cùng | `frontend/src/components/layout/` |
+| Sửa chữ / bản dịch | `frontend/src/lib/dictionary.ts` |
+| Sửa dữ liệu mẫu (điểm, lịch học...) | `frontend/src/lib/mock-data.ts` |
+| Sửa cách frontend gọi API | `frontend/src/lib/api-client.ts` |
+| Sửa logic đăng nhập / token | `backend/academic-api/src/auth/` |
+| Sửa quản lý người dùng | `backend/academic-api/src/users/` |
+| Sửa cách Portal chuyển tiếp yêu cầu | `backend/portal/src/` |
+| Thêm nghiệp vụ học phí | `backend/finance-api/src/` |
+| Đổi cổng, mật khẩu DB, khóa JWT | `.env` (copy từ `.env.example`) |
+| Đổi cách CI kiểm tra | `ci/*.sh` (không sửa file `.yml`) |
+
+---
+
+## 4. Đã làm được gì, còn thiếu gì
+
+**✅ Đã xong**
+
+- Frontend đầy đủ giao diện: trang giới thiệu, đăng nhập, đăng ký, bảng điều khiển, thời khóa biểu, bảng điểm, điểm danh, thông báo, hồ sơ cá nhân.
+- Đa ngôn ngữ, chế độ sáng/tối, menu lệnh nhanh, nút hiện/ẩn mật khẩu.
+- **Đăng nhập, đăng ký, đổi mật khẩu, đăng xuất đã gọi backend thật** qua Portal.
+- Backend có phân quyền 3 vai trò **admin / teacher / student**:
+  - admin: quản lý mọi người dùng
+  - teacher: chỉ xem được danh sách student
+  - student: chỉ xem thông tin của mình
+- Bảo mật backend: mật khẩu băm bcrypt, access token 15 phút + refresh token 7 ngày (mỗi lần làm mới là đổi token mới), giới hạn số lần gọi (rate limit), kiểm tra dữ liệu đầu vào, `helmet`.
+- Test e2e cho Portal và Academic. CI/CD trên GitHub Actions.
+
+**⏳ Chưa xong**
+
+- Thời khóa biểu, điểm, điểm danh, thông báo **vẫn là dữ liệu giả** (`mock-data.ts`), chưa có API backend.
+- Finance API mới có `/health`, chưa có nghiệp vụ học phí.
+
+---
+
+## 5. Chạy thử trên máy mình
+
+**Cần cài:** Node.js ≥ 22, npm. Muốn chạy backend thì cần thêm **Docker** (dễ nhất) hoặc PostgreSQL.
+
+### Cách A – Chỉ xem giao diện
+
 ```bash
 cd frontend
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # build ra frontend/dist
-npm run lint       # oxlint
+npm run dev        # mở http://localhost:5173
 ```
 
-### Backend (3 microservice)
+Giao diện hiện lên được, nhưng **đăng nhập sẽ báo lỗi** vì chưa có backend. Muốn đăng nhập được thì làm thêm Cách B.
 
-**Cách 1 – Docker Compose (cả 3 dịch vụ + PostgreSQL):**
+### Cách B – Chạy cả hệ thống bằng Docker (khuyên dùng)
+
 ```bash
-cp .env.example .env                 # điền DB_PASSWORD, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET (≥ 32 ký tự, ngẫu nhiên)
-docker compose up -d --build         # Portal :8080, Academic :8081, Finance :8082 (đổi cổng Portal bằng PORTAL_PORT)
-docker compose exec academic-api node dist/database/seed.js    # tạo 3 tài khoản demo
-# Triển khai (chỉ Portal công khai):
-docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --build
+# 1. Tạo file cấu hình
+cp .env.example .env
+# Mở .env, điền DB_PASSWORD, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET.
+# Sinh chuỗi ngẫu nhiên bằng lệnh:
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+
+# 2. Bật backend (3 dịch vụ + PostgreSQL)
+docker compose up -d --build
+
+# 3. Tạo 3 tài khoản demo
+docker compose exec academic-api node dist/database/seed.js
+
+# 4. Bật frontend (terminal khác)
+cd frontend && npm install && npm run dev
 ```
 
-**Cách 2 – chạy từng dịch vụ để phát triển** (mỗi dịch vụ một terminal):
+Mở http://localhost:5173 và đăng nhập bằng tài khoản demo bên dưới. Khi dev, Vite tự chuyển các yêu cầu `/api` sang Portal ở `localhost:8080`.
+
+Tắt backend: `docker compose down`.
+
+### Cách C – Chạy từng dịch vụ backend riêng (khi cần sửa code backend)
+
+Mỗi dịch vụ chạy trong **một terminal riêng**:
+
 ```bash
-cd services/academic-api
-cp .env.example .env                 # rồi đổi JWT_ACCESS_SECRET / JWT_REFRESH_SECRET (≥ 32 ký tự)
-docker compose up -d                 # bật PostgreSQL (cổng 5440), hoặc dùng PostgreSQL có sẵn và sửa .env
+# Terminal 1 – Academic API
+cd backend/academic-api
+cp .env.example .env                 # đổi JWT_ACCESS_SECRET / JWT_REFRESH_SECRET (≥ 32 ký tự)
+docker compose up -d                 # bật PostgreSQL riêng ở cổng 5440
 npm install && npm run seed
-PORT=8081 npm run start:dev          # http://localhost:8081/api/v1   |   Swagger: /docs
-npm test                             # test e2e trên DB riêng school_portal_test
+PORT=8081 npm run start:dev          # http://localhost:8081/api/v1  |  tài liệu API: /docs
 
-cd ../portal
+# Terminal 2 – Portal
+cd backend/portal
 cp .env.example .env                 # ACADEMIC_URL=http://localhost:8081
-npm install && npm run start:dev     # http://localhost:8080/api/v1   |   Swagger: /docs
-npm test                             # test e2e với Academic giả, không cần DB
+npm install && npm run start:dev     # http://localhost:8080/api/v1  |  tài liệu API: /docs
 
-cd ../finance-api && npm install && PORT=8082 npm run start:dev    # khung /health
+# Terminal 3 – Finance (không bắt buộc)
+cd backend/finance-api
+npm install && PORT=8082 npm run start:dev
 ```
-Chi tiết thiết kế xác thực và danh sách endpoint của Academic: [services/academic-api/README.md](services/academic-api/README.md).
 
-> Lưu ý kỹ thuật: các dịch vụ là **ESM** (import tương đối phải có đuôi `.js`) và **TypeScript phải giữ ở bản ^6** (bản 7 chưa có compiler API nên Nest CLI không build được).
+Chạy test: `npm test` trong `backend/academic-api` (cần PostgreSQL) hoặc `backend/portal` (không cần DB).
 
-**Tài khoản demo** (do `npm run seed` tạo, mật khẩu mặc định chỉ dùng khi phát triển):
+### Tài khoản demo
+
+Do lệnh seed tạo ra. Mật khẩu mặc định chỉ dùng khi phát triển (xem trong code seed của `backend/academic-api`).
 
 | Vai trò | Email |
 |---|---|
@@ -120,69 +215,168 @@ Chi tiết thiết kế xác thực và danh sách endpoint của Academic: [ser
 | teacher | `teacher@lumina.edu.vn` |
 | student | `minhanh@sv.lumina.edu.vn` |
 
-## Backend API
+### Các lệnh npm hay dùng
 
-Tiền tố `/api/v1`. **Client chỉ nói chuyện với Portal**; Portal chuyển tiếp đăng nhập tới Academic, trả lỗi theo một định dạng chuẩn `{"error":{"code","message","requestId"}}`. Mỗi request mang một `X-Request-ID`: Portal sinh (hoặc giữ ID client gửi), truyền xuống Academic, và cả hai ghi ID đó vào mỗi dòng log truy cập, nên `grep <requestId>` thấy được đường đi qua hai dịch vụ (Finance chưa có, sẽ thêm cùng nghiệp vụ học phí). Gọi dịch vụ con có timeout 2 giây (không kết nối được → 503, quá hạn → 504, dịch vụ con trả 5xx/dữ liệu hỏng → 502).
+| Lệnh | Ở đâu | Làm gì |
+|---|---|---|
+| `npm run dev` | frontend | chạy giao diện ở chế độ dev |
+| `npm run build` | frontend | build ra `frontend/dist` (file tĩnh để đưa lên Nginx) |
+| `npm run lint` | frontend | kiểm tra lỗi code |
+| `npm run start:dev` | backend/* | chạy dịch vụ, tự khởi động lại khi sửa code |
+| `npm test` | backend/* | chạy test |
+| `npm run seed` | academic-api | tạo tài khoản demo |
 
-**Portal** (công khai ra ngoài)
+> **Lưu ý kỹ thuật khi sửa backend:**
+> - Code dùng **ESM**, nên khi import file khác phải ghi đuôi `.js` (vd `import { X } from './x.js'`).
+> - **Giữ TypeScript ở bản ^6**, đừng nâng lên 7 (Nest CLI chưa build được với bản 7).
+
+---
+
+## 6. Backend: các đường dẫn API
+
+Mọi đường dẫn đều bắt đầu bằng `/api/v1`. Có thể xem và thử trực tiếp trên trang Swagger: `http://localhost:8080/docs`.
+
+### Portal – cửa chính, frontend gọi vào đây
 
 | Method | Đường dẫn | Ai gọi được |
 |---|---|---|
-| GET | `/health` | công khai |
-| POST | `/portal/auth/register`, `/portal/auth/login`, `/portal/auth/refresh` | công khai |
+| GET | `/health` | ai cũng gọi được |
+| POST | `/portal/auth/register` | ai cũng gọi được (luôn tạo tài khoản student) |
+| POST | `/portal/auth/login`, `/portal/auth/refresh` | ai cũng gọi được |
 | POST | `/portal/auth/logout`, `/portal/auth/change-password` | đã đăng nhập |
-| GET | `/portal/me` | đã đăng nhập (Portal hỏi Academic `/auth/me` để xác thực) |
+| GET | `/portal/me` | đã đăng nhập |
 
-**Academic API** (nội bộ; mở cổng 8081 chỉ khi demo/Postman)
+### Academic API – nội bộ, chỉ Portal gọi
 
 | Method | Đường dẫn | Ai gọi được |
 |---|---|---|
-| GET | `/health` | công khai |
-| POST | `/auth/register`, `/auth/login`, `/auth/refresh` | công khai |
+| GET | `/health` | ai cũng gọi được |
+| POST | `/auth/register`, `/auth/login`, `/auth/refresh` | ai cũng gọi được |
 | POST | `/auth/logout`, `/auth/change-password` | đã đăng nhập |
 | GET | `/auth/me`, `/users/me` | đã đăng nhập |
-| GET | `/users` | admin (tất cả), teacher (chỉ student) |
-| POST, GET/PATCH/DELETE | `/users`, `/users/:id` | admin |
+| GET | `/users` | admin (thấy tất cả), teacher (chỉ thấy student) |
+| POST / GET / PATCH / DELETE | `/users`, `/users/:id` | chỉ admin |
 
-**Finance API**: mới có `GET /health`.
+### Finance API
 
-## Triển khai & vận hành (Đề tài 05)
+Mới có `GET /health`.
 
-Hướng dẫn nằm ở thư mục `KEY_PROJECT/docs/` (cạnh thư mục dự án, **không nằm trong repo này**). Chúng viết cho vai trò **SV2 – "Cài web, cấu hình hệ điều hành"**, nhưng cả nhóm đọc để hiểu hệ thống chạy thế nào.
+### Vài điều cần biết
 
-| Tài liệu (trong `KEY_PROJECT/docs/`) | Dành cho | Nội dung |
-|---|---|---|
-| `HUONG_DAN_SV2.md` | **Windows 11** | Phân tích đề bằng lời dễ hiểu; build web; cài Nginx; tên miền nội bộ `truong.test`; chạy dịch vụ dưới tài khoản ít quyền; chuẩn bị KT1–KT3 và câu hỏi bảo vệ |
-| `HUONG_DAN_SV2_UBUNTU.md` | **Ubuntu** | Như trên nhưng trên Linux; có cài đặt ban đầu cho máy mới, **mục G: chạy thêm Backend + PostgreSQL**, và **phụ lục H: toàn bộ lệnh theo thứ tự (copy-paste)** |
-| `HUONG_DAN_SV2_ADVANCE.md` | **Ubuntu (nâng cao)** | Triển khai không gián đoạn + rollback; chạy Nginx không root; sandbox systemd và cgroup; AppArmor; tinh chỉnh hệ điều hành; tự chấm điểm bằng script; Cấp 8 vận hành backend + PostgreSQL an toàn |
+- **Lỗi luôn có cùng một dạng:** `{"error": {"code": "...", "message": "...", "requestId": "..."}}`.
+- **Request ID:** mỗi yêu cầu có một mã `X-Request-ID`. Portal và Academic đều ghi mã này vào log, nên khi có lỗi chỉ cần `grep <requestId>` là thấy yêu cầu đã đi qua những đâu.
+- **Portal chờ dịch vụ con tối đa 2 giây:**
+  - không kết nối được → `503`
+  - quá 2 giây → `504`
+  - dịch vụ con trả lỗi 5xx hoặc dữ liệu hỏng → `502`
 
-**Kiến trúc đích khi triển khai** (hướng có backend):
+Chi tiết về thiết kế xác thực: [backend/academic-api/README.md](backend/academic-api/README.md).
+
+---
+
+## 7. CI/CD (tự động kiểm tra và triển khai)
+
+- **CI** (`.github/workflows/ci.yml`): mỗi khi tạo PR hoặc push, GitHub tự build, chạy lint, test và quét bảo mật, **chỉ cho phần code bị sửa**.
+- **CD** (`.github/workflows/cd.yml`): khi push lên `main` và CI xanh, GitHub tự build image Docker, quét lỗ hổng, đẩy lên GHCR rồi cập nhật bản triển khai.
+
+Logic thật nằm trong `ci/*.sh`, file `.yml` chỉ gọi script. Có thể chạy CI ngay trên máy mình:
+
+```bash
+bash ci/start-ci.sh                  # kiểm tra tất cả
+bash ci/start-ci.sh portal frontend  # chỉ kiểm tra vài phần
 ```
-Trình duyệt ──80──► Nginx ──/────────────► file tĩnh frontend/dist
-                      │
-                      └──/api/v1/──► Portal (127.0.0.1:8080)
-                                       │   mạng nội bộ Docker 172.30.0.0/24
-                                       ├──► Academic API (:8081) ──► PostgreSQL
-                                       └──► Finance API  (:8082)
+
+Giải thích chi tiết: [.github/workflows/README.md](.github/workflows/README.md).
+
+---
+
+## 8. Triển khai lên máy chủ (Đề tài 05)
+
+Khi chạy trên máy chủ thật, hệ thống trông như sau:
+
 ```
-Chỉ Nginx lộ ra ngoài. Nginx chuyển `/api/v1/` tới **Portal** (không phải tới Academic): `proxy_pass http://127.0.0.1:8080;`. Academic, Finance và PostgreSQL chỉ nói chuyện trong mạng nội bộ (dùng `docker-compose.deploy.yml`). Khi có Nginx cùng máy, đặt `PORTAL_BIND=127.0.0.1` và `PORTAL_TRUST_PROXY=172.30.0.1` trong `.env` (giải thích trong `.env.example`).
+Trình duyệt ──cổng 80──► Nginx ──/ ─────────────► file tĩnh frontend/dist
+                           │
+                           └──/api/v1/ ──► Portal (127.0.0.1:8080)
+                                             │   mạng nội bộ Docker 172.30.0.0/24
+                                             ├──► Academic API (:8081) ──► PostgreSQL
+                                             └──► Finance API  (:8082)
+```
 
-> Tài liệu SV2 ngoài repo vẫn mô tả bản cũ (một backend NestJS ở cổng 3000), cần cập nhật theo sơ đồ này.
+Ý chính:
 
-**Ba bài nghiệm thu của đề:** KT1 – truy cập `http://truong.test/` từ máy khác; KT2 – phân biệt hai loại lỗi (DNS sai và dừng dịch vụ) bằng bằng chứng khác nhau; KT3 – xóa nội dung rồi khôi phục từ bản sao lưu.
+- **Chỉ Nginx mở ra ngoài.** Nginx trả file giao diện, và chuyển `/api/v1/` sang **Portal** (`proxy_pass http://127.0.0.1:8080;`).
+- Academic, Finance, PostgreSQL **chỉ nói chuyện trong mạng nội bộ**, bên ngoài không gọi thẳng được.
+- Lệnh chạy khi triển khai:
 
-## Phân công nhóm
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --build
+  ```
+
+- Khi Nginx nằm cùng máy, thêm vào `.env`:
+
+  ```
+  PORTAL_BIND=127.0.0.1
+  PORTAL_TRUST_PROXY=172.30.0.1
+  ```
+
+  (giải thích trong `.env.example`).
+
+**Tài liệu hướng dẫn** nằm trong `Documents/CNNT requirements/`:
+
+| File | Nội dung |
+|---|---|
+| `yeu_cau_bai_tap_nhom.md` | Đề bài nhóm |
+| `HUONG_DAN_DOC_YEU_CAU_BAI_TAP_NHOM.md` | Giải thích đề bài cho dễ hiểu |
+| `HUONG_DAN_SV2_UBUNTU.md` | Hướng dẫn SV2 cài web, Nginx, cấu hình hệ điều hành trên Ubuntu |
+| `HUONG_DAN_SV2_ADVANCE.md` | Bản nâng cao: triển khai không gián đoạn, rollback, sandbox systemd, AppArmor... |
+| `LENH_CHUP_ANH_SV2.md` | Các lệnh cần chạy để chụp ảnh minh chứng |
+| `mau_bao_cao_ca_nhan.md` | Mẫu báo cáo cá nhân |
+| `bao_cao_*.md` | Các báo cáo đã viết |
+
+**Ba bài nghiệm thu của đề:**
+
+- **KT1:** máy khác truy cập được `http://truong.test/`.
+- **KT2:** phân biệt hai loại lỗi (sai DNS và dịch vụ bị dừng) bằng bằng chứng khác nhau.
+- **KT3:** xóa nội dung rồi khôi phục lại từ bản sao lưu.
+
+---
+
+## 9. Phân công nhóm
 
 | Thành viên | Phần việc |
 |---|---|
 | SV1 | DNS, sơ đồ đường đi của một lần truy cập web |
 | **SV2** | **Cài web server, cấu hình hệ điều hành, tên miền nội bộ, thư mục nội dung, quyền tiến trình** |
-| SV3 | Giới hạn truy cập quản trị, sao lưu & phục hồi, phương án HTTPS, phân quyền, log |
+| SV3 | Giới hạn truy cập quản trị, sao lưu & phục hồi, HTTPS, phân quyền, log |
 | SV4 | Quan sát mã HTTP, log, PID, CPU/RAM khi có nhiều yêu cầu; kiểm thử KT2 |
 
-## Quy tắc bảo mật khi làm việc với repo
+---
 
-- **Không commit** `.env`, `*.pem`, `*.key`, mật khẩu thật hay khóa riêng (đã có trong `.gitignore`). Chỉ commit `.env.example` với giá trị giả.
-- Mật khẩu/khóa JWT trên máy chủ thật phải **sinh ngẫu nhiên**, không dùng giá trị mẫu `change-me-...` hay `Password123!`.
-- Trước mỗi lần commit: `git status` và `git diff --cached` để chắc không có file bí mật.
-- Ảnh chụp màn hình đưa vào báo cáo nên che IP nội bộ, tên người dùng máy và mọi mật khẩu.
+## 10. Quy tắc bảo mật
+
+- **Không bao giờ commit** `.env`, `*.pem`, `*.key`, mật khẩu thật. Chỉ commit `.env.example` với giá trị giả (`.gitignore` đã chặn sẵn).
+- Trên máy chủ thật, mật khẩu và khóa JWT phải **sinh ngẫu nhiên**, không dùng giá trị mẫu như `change-me-...` hay `Password123!`.
+- Trước khi commit, chạy `git status` và `git diff --cached` để chắc không lọt file bí mật.
+- Ảnh chụp màn hình cho báo cáo: che IP nội bộ, tên người dùng máy và mọi mật khẩu.
+
+---
+
+## 11. Từ điển thuật ngữ
+
+| Từ | Nghĩa đơn giản |
+|---|---|
+| **Frontend** | Phần giao diện chạy trên trình duyệt |
+| **Backend** | Phần máy chủ xử lý dữ liệu, người dùng không thấy |
+| **Microservice** | Chia backend thành nhiều dịch vụ nhỏ, mỗi dịch vụ lo một việc |
+| **API** | "Cửa" để frontend gửi yêu cầu và nhận dữ liệu từ backend |
+| **Endpoint** | Một đường dẫn API cụ thể, vd `/portal/auth/login` |
+| **Token (JWT)** | "Vé" chứng minh đã đăng nhập. Access token dùng để gọi API (sống 15 phút); refresh token dùng để xin vé mới (sống 7 ngày) |
+| **Mock data** | Dữ liệu giả để dựng giao diện trước khi có backend |
+| **Seed** | Lệnh tạo sẵn dữ liệu ban đầu (vd tài khoản demo) |
+| **Docker / image / container** | Đóng gói ứng dụng kèm mọi thứ nó cần để chạy giống nhau trên mọi máy |
+| **Docker Compose** | Chạy nhiều container cùng lúc bằng một file cấu hình |
+| **Nginx** | Web server đứng trước, trả file giao diện và chuyển tiếp yêu cầu API |
+| **Swagger** | Trang web tự sinh, liệt kê và cho thử các API (`/docs`) |
+| **CI/CD** | Tự động kiểm tra code (CI) và tự động triển khai (CD) mỗi khi push |
+| **e2e test** | Test chạy cả luồng từ đầu tới cuối, như người dùng thật gọi API |

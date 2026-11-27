@@ -14,7 +14,7 @@ mkdir -p "$REPORT_DIR"
 
 status=0
 
-for dir in frontend services/portal services/academic-api services/finance-api; do
+for dir in frontend backend/portal backend/academic-api backend/finance-api; do
   echo "==> npm audit: $dir"
   (cd "$ROOT/$dir" && npm audit --omit=dev --audit-level=high) || status=1
 done
